@@ -1,0 +1,241 @@
+'use client'
+
+import { useMemo } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  ResponsiveContainer,
+} from 'recharts'
+import { BudgetProgressBar } from '@/components/BudgetProgressBar'
+import { formatCurrency } from '@/lib/utils'
+import type { CampBudgetSummary, ExpenseCategory } from '@/lib/types'
+
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#6B7280', '#EC4899', '#14B8A6']
+
+interface Expense {
+  id: string
+  camp_id: string
+  amount: number
+  status: string
+  category_id: string | null
+  submitted_at: string
+}
+
+interface Props {
+  campBudgets: CampBudgetSummary[]
+  categories: ExpenseCategory[]
+  expenses: Expense[]
+}
+
+export function AnalyticsClient({ campBudgets, categories, expenses }: Props) {
+  // Bar chart: expenses per camp
+  const campChartData = useMemo(() =>
+    campBudgets.map(({ camp, total_approved, total_pending, total_rejected }) => ({
+      name: camp.name,
+      אושר: total_approved,
+      ממתין: total_pending,
+      נדחה: total_rejected,
+    })),
+    [campBudgets]
+  )
+
+  // Pie chart: by category
+  const categoryData = useMemo(() => {
+    const map = new Map<string, number>()
+    expenses
+      .filter((e) => e.status === 'approved')
+      .forEach((e) => {
+        const catName = categories.find((c) => c.id === e.category_id)?.name ?? 'אחר'
+        map.set(catName, (map.get(catName) ?? 0) + Number(e.amount))
+      })
+    return Array.from(map.entries()).map(([name, value]) => ({ name, value }))
+  }, [expenses, categories])
+
+  // Line chart: cumulative by week
+  const weeklyData = useMemo(() => {
+    const approved = expenses
+      .filter((e) => e.status === 'approved')
+      .sort((a, b) => new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime())
+
+    if (approved.length === 0) return []
+
+    const weeks = new Map<string, number>()
+    let cumulative = 0
+    approved.forEach((e) => {
+      const date = new Date(e.submitted_at)
+      const weekStart = new Date(date)
+      weekStart.setDate(date.getDate() - date.getDay())
+      const key = weekStart.toLocaleDateString('he-IL', { month: 'short', day: 'numeric' })
+      cumulative += Number(e.amount)
+      weeks.set(key, cumulative)
+    })
+
+    return Array.from(weeks.entries()).map(([week, total]) => ({ week, total }))
+  }, [expenses])
+
+  // Budget utilization sorted by % desc
+  const sortedBudgets = [...campBudgets].sort((a, b) => b.usage_percent - a.usage_percent)
+
+  // Category overspend
+  const categoryOverspend = useMemo(() => {
+    return categories
+      .filter((c) => c.budget_cap && c.budget_cap > 0)
+      .map((cat) => {
+        const spent = expenses
+          .filter((e) => e.status === 'approved' && e.category_id === cat.id)
+          .reduce((s, e) => s + Number(e.amount), 0)
+        return { ...cat, spent, over: spent > (cat.budget_cap ?? 0) }
+      })
+      .filter((c) => c.over)
+  }, [categories, expenses])
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">אנליטיקס</h2>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Bar chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">הוצאות לפי קמפ</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={campChartData}>
+                <XAxis dataKey="name" fontSize={12} />
+                <YAxis fontSize={12} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="אושר" stackId="a" fill="#10B981" />
+                <Bar dataKey="ממתין" stackId="a" fill="#F59E0B" />
+                <Bar dataKey="נדחה" stackId="a" fill="#EF4444" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Pie chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">פירוט לפי קטגוריה</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`}
+                >
+                  {categoryData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Line chart */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-lg">הוצאות מאושרות לאורך זמן (מצטבר)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={weeklyData}>
+                <XAxis dataKey="week" fontSize={12} />
+                <YAxis fontSize={12} />
+                <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+                <Line type="monotone" dataKey="total" stroke="#3B82F6" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Budget utilization table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">ניצול תקציב</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>קמפ</TableHead>
+                <TableHead>תקציב</TableHead>
+                <TableHead>הוצאות</TableHead>
+                <TableHead>נותר</TableHead>
+                <TableHead>אחוז</TableHead>
+                <TableHead className="w-[200px]">ניצול</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedBudgets.map(({ camp, total_approved, remaining, usage_percent }) => (
+                <TableRow key={camp.id}>
+                  <TableCell className="font-medium">{camp.name}</TableCell>
+                  <TableCell className="font-mono">{formatCurrency(camp.total_budget)}</TableCell>
+                  <TableCell className="font-mono">{formatCurrency(total_approved)}</TableCell>
+                  <TableCell className="font-mono">{formatCurrency(remaining)}</TableCell>
+                  <TableCell>{usage_percent.toFixed(0)}%</TableCell>
+                  <TableCell>
+                    <BudgetProgressBar
+                      total={camp.total_budget}
+                      used={total_approved}
+                      showLabels={false}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Category overspend alerts */}
+      {categoryOverspend.length > 0 && (
+        <Card className="border-red-200">
+          <CardHeader>
+            <CardTitle className="text-lg text-red-600">חריגה בקטגוריות</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {categoryOverspend.map((cat) => (
+                <div key={cat.id} className="flex justify-between items-center py-2 border-b last:border-0">
+                  <span className="font-medium">{cat.name}</span>
+                  <div className="text-sm">
+                    <span className="text-red-600 font-mono">{formatCurrency(cat.spent)}</span>
+                    <span className="text-muted-foreground"> / {formatCurrency(cat.budget_cap!)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
