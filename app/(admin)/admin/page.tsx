@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { BudgetProgressBar } from '@/components/BudgetProgressBar'
 import { ActivityFeed } from '@/components/ActivityFeed'
+import { CollapsibleCard } from '@/components/CollapsibleCard'
 import { getAllCampsWithBudgets } from '@/lib/actions/camps'
 import { getAppSettings, getAuditLogs } from '@/lib/actions/settings'
 import { formatCurrency } from '@/lib/utils'
@@ -50,9 +51,6 @@ export default async function AdminDashboard() {
         <Link href="/admin/camps">
           <Button variant="outline" className="border-dashed">+ קמפ חדש</Button>
         </Link>
-        <Link href="/admin/users">
-          <Button variant="outline" className="border-dashed">+ משתמש חדש</Button>
-        </Link>
         <Link href="/admin/expenses?status=pending">
           <Button className="bg-primary hover:bg-primary/90">
             עבור להוצאות ממתינות
@@ -95,20 +93,18 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Activity feed */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">פעילות אחרונה</CardTitle>
-              <Link href="/admin/settings">
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">הכל</Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ActivityFeed logs={recentLogs} />
-          </CardContent>
-        </Card>
+        {/* Activity feed — collapsible */}
+        <CollapsibleCard
+          title="פעילות אחרונה"
+          className="shadow-sm"
+          headerAction={
+            <Link href="/admin/settings">
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">הכל</Button>
+            </Link>
+          }
+        >
+          <ActivityFeed logs={recentLogs} />
+        </CollapsibleCard>
       </div>
     </div>
   )
