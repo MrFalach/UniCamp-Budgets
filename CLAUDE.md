@@ -58,6 +58,10 @@ Required in `.env.local` (and Vercel):
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
+## Git
+
+- **All commits and pushes must use the email `mrfalach@gmail.com`.** Do not commit or push with any other user/email.
+
 ## Conventions
 
 - Language: Hebrew (RTL). UI text is in Hebrew throughout.
