@@ -92,7 +92,7 @@ export function CampFormDialog({ camp, campEmail, open, onOpenChange }: CampForm
               </Button>
             </div>
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
-              שים לב: הלינק תקף לשעה אחת בלבד. אם פג תוקף — לחץ "שלח הזמנה" בטבלת הקמפים.
+              שים לב: הלינק תקף לשעה אחת בלבד. אם פג תוקף — לחץ &ldquo;שלח הזמנה&rdquo; בטבלת הקמפים.
             </div>
             <div className="flex justify-end">
               <Button onClick={handleClose}>סגור</Button>
@@ -111,7 +111,7 @@ export function CampFormDialog({ camp, campEmail, open, onOpenChange }: CampForm
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4" key={camp?.id ?? 'new'}>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="name">שם הקמפ *</Label>
               <Input id="name" name="name" required defaultValue={camp?.name ?? ''} />
@@ -154,7 +154,7 @@ export function CampFormDialog({ camp, campEmail, open, onOpenChange }: CampForm
             <Textarea id="description" name="description" defaultValue={camp?.description ?? ''} rows={2} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="bank_account_name">שם בעל החשבון</Label>
               <Input id="bank_account_name" name="bank_account_name" defaultValue={camp?.bank_account_name ?? ''} />

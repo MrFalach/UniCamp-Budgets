@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { EmptyState } from '@/components/EmptyState'
 import { UserInviteDialog } from '@/components/UserInviteDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { updateUser } from '@/lib/actions/users'
@@ -96,7 +97,70 @@ export function AdminUsersClient({ users }: Props) {
         </span>
       </div>
 
-      <Card className="shadow-sm">
+      {/* Mobile card view */}
+      <div className="md:hidden space-y-3 stagger-children">
+        {users.length === 0 ? (
+          <EmptyState icon="users" title="אין משתמשים במערכת" description="הזמן משתמשים כדי להתחיל" />
+        ) : (
+          users.map((user) => (
+            <Card key={user.id} className="shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="font-medium">{user.full_name || user.email || '—'}</p>
+                    <p dir="ltr" className="text-sm text-muted-foreground">{user.email}</p>
+                  </div>
+                  {user.is_active ? (
+                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                      פעיל
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-xs font-medium text-gray-500">
+                      מושבת
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between mt-3">
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={user.role}
+                      onChange={(e) => {
+                        const newRole = e.target.value
+                        if (newRole !== user.role) {
+                          setRoleChangeTarget({ user, newRole })
+                        }
+                      }}
+                      className="h-8 w-24 rounded-md border border-input bg-background px-2 text-sm"
+                    >
+                      <option value="admin">מנהל</option>
+                      <option value="camp">קמפ</option>
+                    </select>
+                    <div className="flex gap-1 flex-wrap">
+                      {user.camp_members?.map((cm) => (
+                        <Badge key={cm.camp_id} variant="outline" className="text-xs">
+                          {cm.camp?.name ?? cm.camp_id}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  {user.is_active ? (
+                    <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => setDeactivateTarget(user)}>
+                      השבת
+                    </Button>
+                  ) : (
+                    <Button variant="ghost" size="sm" className="text-emerald-600 text-xs" onClick={() => handleActivate(user.id)}>
+                      הפעל
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <Card className="shadow-sm hidden md:block">
         <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
@@ -112,12 +176,8 @@ export function AdminUsersClient({ users }: Props) {
             <TableBody>
               {users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <span className="text-3xl">👥</span>
-                      <p className="text-sm font-medium">אין משתמשים במערכת</p>
-                      <p className="text-xs">הזמן משתמשים כדי להתחיל</p>
-                    </div>
+                  <TableCell colSpan={6}>
+                    <EmptyState icon="users" title="אין משתמשים במערכת" description="הזמן משתמשים כדי להתחיל" />
                   </TableCell>
                 </TableRow>
               ) : (

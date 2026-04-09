@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Progress } from '@/components/ui/progress'
 import { getBudgetColor, formatCurrency } from '@/lib/utils'
 
@@ -11,7 +12,15 @@ interface BudgetProgressBarProps {
 }
 
 export function BudgetProgressBar({ total, used, threshold = 80, showLabels = true }: BudgetProgressBarProps) {
-  const percent = total > 0 ? Math.min((used / total) * 100, 100) : 0
+  const targetPercent = total > 0 ? Math.min((used / total) * 100, 100) : 0
+  const [percent, setPercent] = useState(0)
+
+  useEffect(() => {
+    // Animate from 0 to target
+    const timeout = setTimeout(() => setPercent(targetPercent), 50)
+    return () => clearTimeout(timeout)
+  }, [targetPercent])
+
   const color = getBudgetColor(percent, threshold)
 
   const colorClass =
@@ -20,9 +29,9 @@ export function BudgetProgressBar({ total, used, threshold = 80, showLabels = tr
     '[&>div]:bg-emerald-500'
 
   const bgClass =
-    color === 'red' ? 'bg-red-100' :
-    color === 'amber' ? 'bg-amber-100' :
-    'bg-emerald-100'
+    color === 'red' ? 'bg-red-100 dark:bg-red-950/30' :
+    color === 'amber' ? 'bg-amber-100 dark:bg-amber-950/30' :
+    'bg-emerald-100 dark:bg-emerald-950/30'
 
   return (
     <div className="space-y-1.5">
@@ -36,11 +45,11 @@ export function BudgetProgressBar({ total, used, threshold = 80, showLabels = tr
             color === 'amber' ? 'text-amber-600' :
             'text-emerald-600'
           }`}>
-            {percent.toFixed(0)}%
+            {targetPercent.toFixed(0)}%
           </span>
         </div>
       )}
-      <Progress value={percent} className={`h-2.5 rounded-full ${bgClass} ${colorClass}`} />
+      <Progress value={percent} className={`h-2.5 rounded-full ${bgClass} ${colorClass} [&>div>div]:transition-all [&>div>div]:duration-1000 [&>div>div]:ease-out`} />
     </div>
   )
 }

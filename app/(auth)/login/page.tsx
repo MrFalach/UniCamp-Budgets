@@ -15,6 +15,8 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [checkingToken, setCheckingToken] = useState(true)
+  const [forgotMode, setForgotMode] = useState(false)
+  const [forgotLoading, setForgotLoading] = useState(false)
   const searchParams = useSearchParams()
   const reason = searchParams.get('reason')
 
@@ -24,7 +26,7 @@ function LoginForm() {
   useEffect(() => {
     const hash = window.location.hash
     if (!hash || !hash.includes('access_token')) {
-      setCheckingToken(false)
+      queueMicrotask(() => setCheckingToken(false))
       return
     }
 
@@ -44,7 +46,6 @@ function LoginForm() {
           setCheckingToken(false)
           return
         }
-        // Redirect based on type
         if (type === 'invite' || type === 'recovery') {
           window.location.href = '/set-password'
         } else {
@@ -52,7 +53,7 @@ function LoginForm() {
         }
       })
     } else {
-      setCheckingToken(false)
+      queueMicrotask(() => setCheckingToken(false))
     }
   }, [])
 
@@ -71,6 +72,26 @@ function LoginForm() {
     window.location.href = '/'
   }
 
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email) {
+      toast.error('הזן אימייל קודם')
+      return
+    }
+    setForgotLoading(true)
+    const siteUrl = window.location.origin
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteUrl}/auth/callback?next=/set-password`,
+    })
+    if (error) {
+      toast.error('שגיאה', { description: error.message })
+    } else {
+      toast.success('נשלח!', { description: 'בדוק את תיבת האימייל שלך לקישור איפוס סיסמה' })
+      setForgotMode(false)
+    }
+    setForgotLoading(false)
+  }
+
   if (checkingToken) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/5 to-background">
@@ -83,13 +104,13 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/5 to-background p-4">
-      <Card className="w-full max-w-md shadow-lg border-0">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/3 p-4">
+      <Card className="w-full max-w-md shadow-xl border-0 animate-scale-in backdrop-blur-sm gradient-border">
         <CardHeader className="text-center pb-2">
-          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <span className="text-2xl">🔥</span>
+          <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20 animate-float">
+            <span className="text-3xl">🔥</span>
           </div>
-          <CardTitle className="text-2xl">UniCamp 2026</CardTitle>
+          <CardTitle className="text-2xl font-bold gradient-text">UniCamp 2026</CardTitle>
           <CardDescription className="mt-1">התחבר למערכת ניהול התקציב</CardDescription>
         </CardHeader>
         <CardContent>
@@ -131,6 +152,36 @@ function LoginForm() {
               {loading ? 'מתחבר...' : 'התחבר'}
             </Button>
           </form>
+          <div className="mt-4 text-center">
+            {forgotMode ? (
+              <div className="space-y-3 animate-fade-in">
+                <p className="text-sm text-muted-foreground">הזן אימייל למעלה ולחץ:</p>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleForgotPassword}
+                  disabled={forgotLoading || !email}
+                >
+                  {forgotLoading ? 'שולח...' : 'שלח קישור איפוס'}
+                </Button>
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setForgotMode(false)}
+                >
+                  חזור להתחברות
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => setForgotMode(true)}
+              >
+                שכחת סיסמה?
+              </button>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

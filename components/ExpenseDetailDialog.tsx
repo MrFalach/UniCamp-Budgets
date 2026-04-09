@@ -113,7 +113,7 @@ export function ExpenseDetailDialog({
             )}
 
             {/* Details */}
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-muted-foreground">סכום:</span>
                 <p className="font-mono font-semibold text-lg">{formatCurrency(expense.amount)}</p>
