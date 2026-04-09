@@ -24,14 +24,20 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/EmptyState'
+import { SwipeableExpenseCard } from '@/components/SwipeableExpenseCard'
 import { StatusBadge } from '@/components/StatusBadge'
 import { ExpenseDetailDialog } from '@/components/ExpenseDetailDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { Confetti } from '@/components/Confetti'
 import {
   getFilteredExpenses,
   bulkUpdateExpenseStatus,
+  updateExpenseStatus,
   adminCreateExpense,
 } from '@/lib/actions/expenses'
+import { useRealtimeExpenses } from '@/lib/hooks/useRealtimeExpenses'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { exportExpensesToExcel } from '@/lib/export'
 import { toast } from 'sonner'
@@ -67,6 +73,7 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
   const [bulkRejectOpen, setBulkRejectOpen] = useState(false)
   const [bulkRejectNote, setBulkRejectNote] = useState('')
   const [manualExpenseOpen, setManualExpenseOpen] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false)
 
   const filters: ExpenseFilters = {
     search: search || undefined,
@@ -87,6 +94,9 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
       setLoading(false)
     }
   }, [search, status, page, perPage])
+
+  // Realtime updates
+  useRealtimeExpenses(fetchExpenses)
 
   useEffect(() => {
     const timeout = setTimeout(fetchExpenses, search ? 300 : 0)
@@ -131,6 +141,8 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
       const result = await bulkUpdateExpenseStatus(ids, 'approved')
       toast.success(`${result.affected} הוצאות אושרו`)
       setSelected(new Set())
+      setShowConfetti(true)
+      setTimeout(() => setShowConfetti(false), 100)
       fetchExpenses()
     } catch {
       toast.error('שגיאה באישור')
@@ -156,6 +168,20 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
     toast.success('הקובץ הורד')
   }
 
+  async function handleSwipeAction(expenseId: string, action: 'approved' | 'rejected') {
+    try {
+      await updateExpenseStatus(expenseId, action)
+      toast.success(action === 'approved' ? 'ההוצאה אושרה' : 'ההוצאה נדחתה')
+      if (action === 'approved') {
+        setShowConfetti(true)
+        setTimeout(() => setShowConfetti(false), 100)
+      }
+      fetchExpenses()
+    } catch {
+      toast.error('שגיאה בעדכון')
+    }
+  }
+
   async function handleManualExpense(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
@@ -171,6 +197,7 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
 
   return (
     <div className="space-y-6">
+      <Confetti trigger={showConfetti} />
       <div>
         <h2 className="text-2xl font-bold tracking-tight">הוצאות</h2>
         <p className="text-sm text-muted-foreground mt-1">
@@ -202,7 +229,7 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
               placeholder="חיפוש תיאור, קמפ..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-              className="w-64"
+              className="w-full sm:w-64"
             />
 
             <Tabs value={status} onValueChange={(v) => { setStatus(v as ExpenseStatus | 'all'); setPage(1) }}>
@@ -222,17 +249,18 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
       </Card>
 
       {/* Actions */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <span className="text-sm text-muted-foreground">
+          {total} תוצאות
+        </span>
         <div className="flex gap-2">
-          <span className="text-sm text-muted-foreground self-center">
-            {total} תוצאות
-          </span>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportExcel}>
+          <Button variant="outline" size="sm" onClick={() => window.print()} className="no-print">
+            הדפס
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportExcel} className="no-print">
             יצוא Excel
           </Button>
-          <Button size="sm" onClick={() => setManualExpenseOpen(true)}>
+          <Button size="sm" onClick={() => setManualExpenseOpen(true)} className="no-print">
             + הוצאה ידנית
           </Button>
         </div>
@@ -254,8 +282,45 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
         </div>
       )}
 
-      {/* Table */}
-      <Card className="shadow-sm">
+      {/* Mobile card view */}
+      <div className="md:hidden space-y-3 stagger-children">
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="shadow-sm">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-5 w-16" />
+                  </div>
+                  <Skeleton className="h-4 w-3/4" />
+                  <div className="flex justify-between">
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : expenses.length === 0 ? (
+          <EmptyState icon="expenses" title="אין הוצאות להצגה" description="נסה לשנות את הסינונים" />
+        ) : (
+          expenses.map((expense) => (
+            <SwipeableExpenseCard
+              key={expense.id}
+              expense={expense}
+              selected={selected.has(expense.id)}
+              onToggleSelect={() => toggleSelect(expense.id)}
+              onTap={() => setDetailExpense(expense)}
+              onApprove={() => handleSwipeAction(expense.id, 'approved')}
+              onReject={() => handleSwipeAction(expense.id, 'rejected')}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <Card className="shadow-sm hidden md:block">
         <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
@@ -280,22 +345,23 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-                      <p className="text-sm">טוען...</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-14" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-6" /></TableCell>
+                  </TableRow>
+                ))
               ) : expenses.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <span className="text-3xl">📋</span>
-                      <p className="text-sm font-medium">אין הוצאות להצגה</p>
-                      <p className="text-xs">נסה לשנות את הסינונים או להוסיף הוצאה חדשה</p>
-                    </div>
+                  <TableCell colSpan={9}>
+                    <EmptyState icon="expenses" title="אין הוצאות להצגה" description="נסה לשנות את הסינונים או להוסיף הוצאה חדשה" />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -355,8 +421,8 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
       {totalPages > 1 && (
         <Card className="shadow-sm">
           <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="hidden sm:flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">שורות בעמוד:</span>
                 <Select value={String(perPage)} onValueChange={(v) => { setPerPage(Number(v)); setPage(1) }}>
                   <SelectTrigger className="w-20 h-8">
@@ -379,7 +445,7 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
                   הקודם
                 </Button>
                 <span className="text-sm font-medium tabular-nums px-2">
-                  עמוד {page} מתוך {totalPages}
+                  {page} / {totalPages}
                 </span>
                 <Button
                   variant="outline"

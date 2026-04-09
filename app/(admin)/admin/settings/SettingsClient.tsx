@@ -93,7 +93,7 @@ export function SettingsClient({ settings, categories, auditLogs, auditTotal }: 
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSaveSettings} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="event_name">שם האירוע</Label>
                 <Input id="event_name" name="event_name" defaultValue={settings.event_name} />

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -15,7 +15,30 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "UniCamp 2026 — ניהול תקציב",
-  description: "מערכת ניהול תקציב לקמפים — UniCamp 2026",
+  description: "מערכת ניהול תקציב לקמפים — UniCamp 2026 | We Are The Camp",
+  openGraph: {
+    title: "UniCamp 2026 — ניהול תקציב",
+    description: "מערכת ניהול תקציב לקמפים — UniCamp 2026 | We Are The Camp",
+    images: [{ url: "/unicamp-logo.jpeg", width: 512, height: 512, alt: "UniCamp Logo" }],
+    siteName: "UniCamp Budgets",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "UniCamp 2026 — ניהול תקציב",
+    description: "מערכת ניהול תקציב לקמפים — UniCamp 2026",
+    images: ["/unicamp-logo.jpeg"],
+  },
+  icons: {
+    icon: "/unicamp-logo.jpeg",
+    apple: "/unicamp-logo.jpeg",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

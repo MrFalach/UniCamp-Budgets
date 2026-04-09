@@ -215,6 +215,48 @@ export function AnalyticsClient({ campBudgets, categories, expenses }: Props) {
         </CardContent>
       </Card>
 
+      {/* Camp comparison */}
+      {campBudgets.length > 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">השוואת קמפים</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {sortedBudgets.map(({ camp, total_approved, usage_percent }, index) => (
+                <div key={camp.id} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-muted-foreground w-5">{index + 1}</span>
+                      <span className="font-medium">{camp.name}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs font-mono">
+                      <span className="text-emerald-600">{formatCurrency(total_approved)}</span>
+                      <span className="text-muted-foreground">/ {formatCurrency(camp.total_budget)}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-6 bg-muted/50 rounded-full overflow-hidden relative">
+                      <div
+                        className={`h-full rounded-full transition-all duration-1000 ${
+                          usage_percent >= 90 ? 'bg-red-500' :
+                          usage_percent >= 70 ? 'bg-amber-500' :
+                          'bg-emerald-500'
+                        }`}
+                        style={{ width: `${Math.min(usage_percent, 100)}%` }}
+                      />
+                      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-foreground/70">
+                        {usage_percent.toFixed(0)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Category overspend alerts */}
       {categoryOverspend.length > 0 && (
         <Card className="border-red-200">

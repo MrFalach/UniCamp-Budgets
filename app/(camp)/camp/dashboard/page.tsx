@@ -38,18 +38,28 @@ export default async function CampDashboard() {
     .limit(5)
 
   const metrics = [
-    { label: 'תקציב כולל', value: formatCurrency(budget.total_budget), color: 'bg-blue-50 border-blue-200', textColor: 'text-blue-700' },
-    { label: 'אושר', value: formatCurrency(budget.total_approved), color: 'bg-emerald-50 border-emerald-200', textColor: 'text-emerald-700' },
-    { label: 'ממתין', value: formatCurrency(budget.total_pending), color: 'bg-amber-50 border-amber-200', textColor: 'text-amber-700' },
-    { label: 'נותר', value: formatCurrency(budget.remaining), color: 'bg-violet-50 border-violet-200', textColor: 'text-violet-700' },
+    { label: 'תקציב כולל', value: formatCurrency(budget.total_budget), color: 'bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800', textColor: 'text-blue-700 dark:text-blue-400' },
+    { label: 'אושר', value: formatCurrency(budget.total_approved), color: 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800', textColor: 'text-emerald-700 dark:text-emerald-400' },
+    { label: 'ממתין', value: formatCurrency(budget.total_pending), color: 'bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800', textColor: 'text-amber-700 dark:text-amber-400' },
+    { label: 'נותר', value: formatCurrency(budget.remaining), color: 'bg-violet-50 border-violet-200 dark:bg-violet-950/30 dark:border-violet-800', textColor: 'text-violet-700 dark:text-violet-400' },
   ]
 
   return (
     <div className="space-y-8">
       {seasonClosed && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4 text-sm flex items-center gap-3">
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300 rounded-lg p-4 text-sm flex items-center gap-3">
           <span className="text-lg">⚠️</span>
           העונה נסגרה — ניתן לצפות בהוצאות בלבד
+        </div>
+      )}
+
+      {budget.usage_percent >= settings.budget_warning_threshold && !seasonClosed && (
+        <div className="bg-red-50 border border-red-200 text-red-800 dark:bg-red-950/30 dark:border-red-800 dark:text-red-300 rounded-lg p-4 text-sm flex items-center gap-3 animate-fade-in">
+          <span className="text-lg">🚨</span>
+          <div>
+            <p className="font-semibold">התקציב עומד להיגמר!</p>
+            <p className="text-xs mt-0.5 opacity-80">ניצלתם {budget.usage_percent.toFixed(0)}% מהתקציב. נותרו {formatCurrency(budget.remaining)} בלבד.</p>
+          </div>
         </div>
       )}
 
@@ -66,9 +76,9 @@ export default async function CampDashboard() {
       </div>
 
       {/* Budget metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
         {metrics.map((m) => (
-          <Card key={m.label} className={`border ${m.color}`}>
+          <Card key={m.label} className={`border ${m.color} hover-lift`}>
             <CardContent className="pt-5 pb-4">
               <p className="text-xs font-medium text-muted-foreground mb-1">{m.label}</p>
               <p className={`text-2xl font-bold font-mono ${m.textColor}`}>{m.value}</p>

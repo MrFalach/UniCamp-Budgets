@@ -43,12 +43,10 @@ export default function SetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/5 to-background p-4">
-      <Card className="w-full max-w-md shadow-lg border-0">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/3 p-4">
+      <Card className="w-full max-w-md shadow-xl border-0 animate-scale-in gradient-border">
         <CardHeader className="text-center pb-2">
-          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <span className="text-2xl">🔥</span>
-          </div>
+          <img src="/unicamp-logo.jpeg" alt="UniCamp" className="w-16 h-16 rounded-2xl object-cover mx-auto mb-3 shadow-lg shadow-primary/20 animate-float" />
           <CardTitle className="text-2xl">UniCamp 2026</CardTitle>
           <CardDescription className="mt-1">הגדר סיסמה כדי להתחיל להשתמש במערכת</CardDescription>
         </CardHeader>

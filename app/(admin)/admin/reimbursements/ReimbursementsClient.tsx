@@ -66,7 +66,7 @@ export function ReimbursementsClient({ reimbursements, seasonStatus }: Props) {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">סגירת עונה והחזרים</h2>
           <p className="text-sm text-muted-foreground mt-1">ניהול החזרים כספיים לקמפים</p>
@@ -88,26 +88,26 @@ export function ReimbursementsClient({ reimbursements, seasonStatus }: Props) {
 
       {/* Summary bar */}
       {reimbursements.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="border bg-blue-50 border-blue-200">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 stagger-children">
+          <Card className="border bg-blue-50 border-blue-200 hover-lift">
             <CardContent className="pt-5 pb-4">
               <p className="text-xs font-medium text-muted-foreground mb-1">סה״כ להחזר</p>
               <p className="text-2xl font-bold font-mono text-blue-700">{formatCurrency(totalAmount)}</p>
             </CardContent>
           </Card>
-          <Card className="border bg-emerald-50 border-emerald-200">
+          <Card className="border bg-emerald-50 border-emerald-200 hover-lift">
             <CardContent className="pt-5 pb-4">
               <p className="text-xs font-medium text-muted-foreground mb-1">שולם</p>
               <p className="text-2xl font-bold font-mono text-emerald-700">{formatCurrency(paidAmount)}</p>
             </CardContent>
           </Card>
-          <Card className="border bg-amber-50 border-amber-200">
+          <Card className="border bg-amber-50 border-amber-200 hover-lift">
             <CardContent className="pt-5 pb-4">
               <p className="text-xs font-medium text-muted-foreground mb-1">נותר לתשלום</p>
               <p className="text-2xl font-bold font-mono text-amber-700">{formatCurrency(remainingAmount)}</p>
             </CardContent>
           </Card>
-          <Card className="border bg-violet-50 border-violet-200">
+          <Card className="border bg-violet-50 border-violet-200 hover-lift">
             <CardContent className="pt-5 pb-4">
               <p className="text-xs font-medium text-muted-foreground mb-1">הושלם</p>
               <p className="text-2xl font-bold font-mono text-violet-700">{paidPercent.toFixed(0)}%</p>
@@ -117,59 +117,96 @@ export function ReimbursementsClient({ reimbursements, seasonStatus }: Props) {
         </div>
       )}
 
-      {/* Reimbursements table */}
+      {/* Reimbursements */}
       {reimbursements.length > 0 ? (
-        <Card className="shadow-sm">
-          <CardContent className="p-0 overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30 hover:bg-muted/30">
-                  <TableHead>קמפ</TableHead>
-                  <TableHead>סכום לגביה</TableHead>
-                  <TableHead>פרטי בנק</TableHead>
-                  <TableHead>סטטוס</TableHead>
-                  <TableHead>אמצעי תשלום</TableHead>
-                  <TableHead>אסמכתא</TableHead>
-                  <TableHead>תאריך תשלום</TableHead>
-                  <TableHead>פעולות</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reimbursements.map((r) => {
-                  const camp = r.camp as Record<string, unknown> | undefined
-                  return (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-medium">{(camp?.name as string) ?? '—'}</TableCell>
-                      <TableCell className="font-mono">{formatCurrency(r.total_amount)}</TableCell>
-                      <TableCell className="text-sm">
-                        {camp?.bank_account_name ? (
-                          <span>
-                            {(camp.bank_name as string) ?? ''} {(camp.bank_branch as string) ?? ''} / {(camp.bank_account_number as string) ?? ''}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">חסר</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={r.status} />
-                      </TableCell>
-                      <TableCell className="text-sm">{getPaymentMethodLabel(r.payment_method)}</TableCell>
-                      <TableCell dir="ltr" className="text-sm">{r.payment_reference ?? '—'}</TableCell>
-                      <TableCell className="text-sm">{r.paid_at ? formatDate(r.paid_at) : '—'}</TableCell>
-                      <TableCell>
-                        {r.status === 'pending' ? (
-                          <Button size="sm" onClick={() => setPayTarget(r)}>סמן כשולם</Button>
-                        ) : (
-                          <Button variant="ghost" size="sm" onClick={() => setEditTarget(r)}>ערוך</Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <>
+          {/* Mobile card view */}
+          <div className="md:hidden space-y-3">
+            {reimbursements.map((r) => {
+              const camp = r.camp as Record<string, unknown> | undefined
+              return (
+                <Card key={r.id} className="shadow-sm">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">{(camp?.name as string) ?? '—'}</span>
+                      <StatusBadge status={r.status} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono font-semibold text-lg">{formatCurrency(r.total_amount)}</span>
+                      <span className="text-xs text-muted-foreground">{r.paid_at ? formatDate(r.paid_at) : ''}</span>
+                    </div>
+                    {(camp?.bank_account_name as string) ? (
+                      <p className="text-xs text-muted-foreground">
+                        {(camp?.bank_name as string) ?? ''} {(camp?.bank_branch as string) ?? ''} / {(camp?.bank_account_number as string) ?? ''}
+                      </p>
+                    ) : null}
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <span className="text-xs text-muted-foreground">{getPaymentMethodLabel(r.payment_method)}</span>
+                      {r.status === 'pending' ? (
+                        <Button size="sm" onClick={() => setPayTarget(r)}>סמן כשולם</Button>
+                      ) : (
+                        <Button variant="ghost" size="sm" onClick={() => setEditTarget(r)}>ערוך</Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <Card className="shadow-sm hidden md:block">
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                    <TableHead>קמפ</TableHead>
+                    <TableHead>סכום לגביה</TableHead>
+                    <TableHead>פרטי בנק</TableHead>
+                    <TableHead>סטטוס</TableHead>
+                    <TableHead>אמצעי תשלום</TableHead>
+                    <TableHead>אסמכתא</TableHead>
+                    <TableHead>תאריך תשלום</TableHead>
+                    <TableHead>פעולות</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reimbursements.map((r) => {
+                    const camp = r.camp as Record<string, unknown> | undefined
+                    return (
+                      <TableRow key={r.id}>
+                        <TableCell className="font-medium">{(camp?.name as string) ?? '—'}</TableCell>
+                        <TableCell className="font-mono">{formatCurrency(r.total_amount)}</TableCell>
+                        <TableCell className="text-sm">
+                          {camp?.bank_account_name ? (
+                            <span>
+                              {(camp.bank_name as string) ?? ''} {(camp.bank_branch as string) ?? ''} / {(camp.bank_account_number as string) ?? ''}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">חסר</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={r.status} />
+                        </TableCell>
+                        <TableCell className="text-sm">{getPaymentMethodLabel(r.payment_method)}</TableCell>
+                        <TableCell dir="ltr" className="text-sm">{r.payment_reference ?? '—'}</TableCell>
+                        <TableCell className="text-sm">{r.paid_at ? formatDate(r.paid_at) : '—'}</TableCell>
+                        <TableCell>
+                          {r.status === 'pending' ? (
+                            <Button size="sm" onClick={() => setPayTarget(r)}>סמן כשולם</Button>
+                          ) : (
+                            <Button variant="ghost" size="sm" onClick={() => setEditTarget(r)}>ערוך</Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </>
       ) : (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
