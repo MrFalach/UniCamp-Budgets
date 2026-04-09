@@ -433,20 +433,10 @@ table tbody tr {
 ::-webkit-scrollbar-thumb:hover {
   background: oklch(0.60 0.03 260);
 }
-.dark ::-webkit-scrollbar-thumb {
-  background: oklch(0.35 0 0);
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.45 0 0);
-}
-
 /* Firefox scrollbar */
 * {
   scrollbar-width: thin;
   scrollbar-color: oklch(0.75 0.02 260) transparent;
-}
-.dark * {
-  scrollbar-color: oklch(0.35 0 0) transparent;
 }
 
 /* ──────────────────────────────────────────

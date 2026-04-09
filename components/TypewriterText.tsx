@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface TypewriterTextProps {
   text: string
@@ -12,27 +12,39 @@ interface TypewriterTextProps {
 export function TypewriterText({ text, speed = 60, className = '', delay = 300 }: TypewriterTextProps) {
   const [displayed, setDisplayed] = useState('')
   const [showCursor, setShowCursor] = useState(true)
+  const cleanupRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      let i = 0
-      const interval = setInterval(() => {
+    let i = 0
+    let intervalId: ReturnType<typeof setInterval>
+    let cursorTimeoutId: ReturnType<typeof setTimeout>
+
+    const delayId = setTimeout(() => {
+      intervalId = setInterval(() => {
         i++
         setDisplayed(text.slice(0, i))
         if (i >= text.length) {
-          clearInterval(interval)
-          setTimeout(() => setShowCursor(false), 1500)
+          clearInterval(intervalId)
+          cursorTimeoutId = setTimeout(() => setShowCursor(false), 1500)
         }
       }, speed)
-      return () => clearInterval(interval)
     }, delay)
-    return () => clearTimeout(timeout)
+
+    cleanupRef.current = () => {
+      clearTimeout(delayId)
+      clearInterval(intervalId)
+      clearTimeout(cursorTimeoutId)
+    }
+
+    return () => cleanupRef.current?.()
   }, [text, speed, delay])
 
   return (
-    <span className={className}>
-      {displayed}
-      {showCursor && <span className="animate-pulse-soft">|</span>}
+    <span className={className} aria-label={text}>
+      <span aria-hidden="true">
+        {displayed}
+        {showCursor && <span className="animate-pulse-soft">|</span>}
+      </span>
     </span>
   )
 }

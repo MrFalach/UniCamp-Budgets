@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useRef, useState, useEffect } from 'react'
 
 interface Particle {
   id: number
@@ -13,20 +13,31 @@ interface Particle {
   shape: 'circle' | 'diamond' | 'ring'
 }
 
+function generateParticles(): Particle[] {
+  return Array.from({ length: 20 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: 4 + Math.random() * 12,
+    opacity: 0.03 + Math.random() * 0.07,
+    duration: 15 + Math.random() * 25,
+    delay: Math.random() * -20,
+    shape: (['circle', 'diamond', 'ring'] as const)[Math.floor(Math.random() * 3)],
+  }))
+}
+
 export function ParticleBackground() {
-  const particles = useMemo<Particle[]>(() =>
-    Array.from({ length: 20 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: 4 + Math.random() * 12,
-      opacity: 0.03 + Math.random() * 0.07,
-      duration: 15 + Math.random() * 25,
-      delay: Math.random() * -20,
-      shape: (['circle', 'diamond', 'ring'] as const)[Math.floor(Math.random() * 3)],
-    })),
-    []
-  )
+  const [particles, setParticles] = useState<Particle[]>([])
+  const initialized = useRef(false)
+
+  useEffect(() => {
+    if (!initialized.current) {
+      initialized.current = true
+      queueMicrotask(() => setParticles(generateParticles()))
+    }
+  }, [])
+
+  if (particles.length === 0) return null
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">

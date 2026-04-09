@@ -13,11 +13,16 @@ export function ScrollReveal({ children, className = '', delay = 0 }: ScrollReve
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    let timeoutId: ReturnType<typeof setTimeout>
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           if (delay > 0) {
-            setTimeout(() => setVisible(true), delay)
+            timeoutId = setTimeout(() => setVisible(true), delay)
           } else {
             queueMicrotask(() => setVisible(true))
           }
@@ -27,8 +32,11 @@ export function ScrollReveal({ children, className = '', delay = 0 }: ScrollReve
       { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
     )
 
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
+    observer.observe(el)
+    return () => {
+      clearTimeout(timeoutId)
+      observer.disconnect()
+    }
   }, [delay])
 
   return (
