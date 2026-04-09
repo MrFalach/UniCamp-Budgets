@@ -107,9 +107,7 @@ function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/3 p-4">
       <Card className="w-full max-w-md shadow-xl border-0 animate-scale-in backdrop-blur-sm gradient-border">
         <CardHeader className="text-center pb-2">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20 animate-float">
-            <span className="text-3xl">🔥</span>
-          </div>
+          <img src="/unicamp-logo.jpeg" alt="UniCamp" className="w-20 h-20 rounded-2xl object-cover mx-auto mb-4 shadow-lg shadow-primary/20 animate-float" />
           <CardTitle className="text-2xl font-bold gradient-text">UniCamp 2026</CardTitle>
           <CardDescription className="mt-1">התחבר למערכת ניהול התקציב</CardDescription>
         </CardHeader>

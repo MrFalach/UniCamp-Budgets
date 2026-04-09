@@ -47,9 +47,7 @@ export function MobileNav({ items, eventName, userName, seasonStatus, signOutAct
         <SheetHeader className="border-b pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground text-sm font-bold">🔥</span>
-              </div>
+              <img src="/unicamp-logo.jpeg" alt="UniCamp" className="w-8 h-8 rounded-lg object-cover" />
               <SheetTitle>{eventName}</SheetTitle>
             </div>
             {seasonStatus && (
