@@ -68,7 +68,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <div className="hidden sm:flex items-center gap-2">
-                <div className="w-7 h-7 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold">
+                <div className="w-7 h-7 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold avatar-ring">
                   {(profile.full_name ?? profile.email ?? 'A').charAt(0).toUpperCase()}
                 </div>
                 <span className="text-sm font-medium">{profile.full_name ?? profile.email}</span>

@@ -416,6 +416,90 @@ table tbody tr {
   }
 }
 
+/* ──────────────────────────────────────────
+   CUSTOM SCROLLBAR
+   ────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(0.75 0.02 260);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.60 0.03 260);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(0.35 0 0);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.45 0 0);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.75 0.02 260) transparent;
+}
+.dark * {
+  scrollbar-color: oklch(0.35 0 0) transparent;
+}
+
+/* ──────────────────────────────────────────
+   BACKDROP DOT PATTERN
+   ────────────────────────────────────────── */
+.dot-pattern {
+  background-image: radial-gradient(circle, oklch(0.488 0.200 264 / 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.dark .dot-pattern {
+  background-image: radial-gradient(circle, oklch(0.488 0.200 264 / 0.08) 1px, transparent 1px);
+}
+
+/* ──────────────────────────────────────────
+   GRADIENT COLORED SHADOWS
+   ────────────────────────────────────────── */
+.shadow-blue {
+  box-shadow: 0 4px 14px -3px oklch(0.588 0.200 264 / 0.2);
+}
+.shadow-emerald {
+  box-shadow: 0 4px 14px -3px oklch(0.65 0.18 155 / 0.2);
+}
+.shadow-amber {
+  box-shadow: 0 4px 14px -3px oklch(0.70 0.18 50 / 0.25);
+}
+.shadow-violet {
+  box-shadow: 0 4px 14px -3px oklch(0.60 0.20 300 / 0.2);
+}
+
+/* ──────────────────────────────────────────
+   AVATAR GRADIENT RING
+   ────────────────────────────────────────── */
+.avatar-ring {
+  position: relative;
+}
+.avatar-ring::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, oklch(0.488 0.200 264), oklch(0.65 0.18 155), oklch(0.70 0.18 50), oklch(0.60 0.20 300));
+  background-size: 300% 300%;
+  animation: gradient-spin 4s linear infinite;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+@keyframes gradient-spin {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* Safe area for bottom nav on iOS */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);

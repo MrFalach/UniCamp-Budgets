@@ -26,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/EmptyState'
+import { SwipeableExpenseCard } from '@/components/SwipeableExpenseCard'
 import { StatusBadge } from '@/components/StatusBadge'
 import { ExpenseDetailDialog } from '@/components/ExpenseDetailDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
@@ -33,6 +34,7 @@ import { Confetti } from '@/components/Confetti'
 import {
   getFilteredExpenses,
   bulkUpdateExpenseStatus,
+  updateExpenseStatus,
   adminCreateExpense,
 } from '@/lib/actions/expenses'
 import { useRealtimeExpenses } from '@/lib/hooks/useRealtimeExpenses'
@@ -166,6 +168,20 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
     toast.success('הקובץ הורד')
   }
 
+  async function handleSwipeAction(expenseId: string, action: 'approved' | 'rejected') {
+    try {
+      await updateExpenseStatus(expenseId, action)
+      toast.success(action === 'approved' ? 'ההוצאה אושרה' : 'ההוצאה נדחתה')
+      if (action === 'approved') {
+        setShowConfetti(true)
+        setTimeout(() => setShowConfetti(false), 100)
+      }
+      fetchExpenses()
+    } catch {
+      toast.error('שגיאה בעדכון')
+    }
+  }
+
   async function handleManualExpense(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
@@ -290,44 +306,15 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
           <EmptyState icon="expenses" title="אין הוצאות להצגה" description="נסה לשנות את הסינונים" />
         ) : (
           expenses.map((expense) => (
-            <Card
+            <SwipeableExpenseCard
               key={expense.id}
-              className={`shadow-sm cursor-pointer hover:shadow-md transition-all active:scale-[0.99] border-s-4 ${
-                expense.status === 'approved' ? 'border-s-emerald-500' :
-                expense.status === 'rejected' ? 'border-s-red-500' :
-                'border-s-amber-500'
-              }`}
-              onClick={() => setDetailExpense(expense)}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(expense.id)}
-                      onChange={() => toggleSelect(expense.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="rounded"
-                    />
-                    <Badge variant="outline" className="text-xs">
-                      {expense.camp?.name ?? '—'}
-                    </Badge>
-                  </div>
-                  <StatusBadge status={expense.status} />
-                </div>
-                <p className="text-sm line-clamp-2 mb-2">{expense.description}</p>
-                <div className="flex items-center justify-between">
-                  <span className={`font-mono font-semibold text-lg ${expense.status === 'approved' ? 'text-emerald-600' : ''}`}>
-                    {formatCurrency(expense.amount)}
-                  </span>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{expense.submitter?.full_name ?? '—'}</span>
-                    <span className="font-mono">{formatDate(expense.submitted_at)}</span>
-                    {expense.receipt_url && <span className="text-emerald-600">📎</span>}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              expense={expense}
+              selected={selected.has(expense.id)}
+              onToggleSelect={() => toggleSelect(expense.id)}
+              onTap={() => setDetailExpense(expense)}
+              onApprove={() => handleSwipeAction(expense.id, 'approved')}
+              onReject={() => handleSwipeAction(expense.id, 'rejected')}
+            />
           ))
         )}
       </div>

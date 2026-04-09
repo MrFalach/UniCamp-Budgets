@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
+import { ParticleBackground } from '@/components/ParticleBackground'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
@@ -104,8 +105,9 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/3 p-4">
-      <Card className="w-full max-w-md shadow-xl border-0 animate-scale-in backdrop-blur-sm gradient-border">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/3 p-4 relative">
+      <ParticleBackground />
+      <Card className="w-full max-w-md shadow-xl border-0 animate-scale-in backdrop-blur-sm gradient-border relative z-10">
         <CardHeader className="text-center pb-2">
           <img src="/unicamp-logo.jpeg" alt="UniCamp" className="w-20 h-20 rounded-2xl object-cover mx-auto mb-4 shadow-lg shadow-primary/20 animate-float" />
           <CardTitle className="text-2xl font-bold gradient-text">UniCamp 2026</CardTitle>
