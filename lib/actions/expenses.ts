@@ -23,7 +23,7 @@ export async function submitExpense(formData: FormData) {
   const receiptType = formData.get('receipt_type') as string | null
 
   // Auto-assign category: camps → "גיפטינג", suppliers → their assigned category
-  const { data: camp } = await supabase.from('camps').select('type').eq('id', campId).single()
+  const { data: camp } = await supabase.from('camps').select('type, name').eq('id', campId).single()
   if (camp?.type === 'camp') {
     const { data: giftingCat } = await supabase
       .from('expense_categories')
@@ -56,9 +56,6 @@ export async function submitExpense(formData: FormData) {
     .single()
 
   if (error) throw new Error(error.message)
-
-  // Get camp name for notification
-  const { data: camp } = await supabase.from('camps').select('name').eq('id', campId).single()
 
   await sendNotification({
     type: 'expense_submitted',
