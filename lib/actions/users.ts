@@ -21,8 +21,11 @@ export async function inviteUser(email: string) {
   if (!currentUser) throw new Error('Unauthorized')
 
   const adminClient = createAdminClient()
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
-  const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email)
+  const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${siteUrl}/auth/callback?next=/set-password`,
+  })
   if (error) throw new Error(error.message)
 
   await logAction(currentUser.id, 'user_invited', 'profile', data.user.id, undefined, { email })

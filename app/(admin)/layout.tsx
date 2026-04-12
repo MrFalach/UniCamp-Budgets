@@ -8,6 +8,7 @@ import { AdminBottomNav } from '@/components/BottomNav'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { signOut } from '@/lib/actions/users'
 import { getAppSettings } from '@/lib/actions/settings'
+import { CreditLine } from '@/components/CreditLine'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -91,6 +92,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <main className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 md:pb-8">
         {children}
       </main>
+      <footer className="hidden md:flex justify-center fixed bottom-2 left-0 right-0 z-30 pointer-events-none">
+        <CreditLine />
+      </footer>
       <AdminBottomNav pendingCount={pendingCount} />
     </div>
   )

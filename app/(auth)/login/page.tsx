@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { ParticleBackground } from '@/components/ParticleBackground'
+import { CreditLine } from '@/components/CreditLine'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
@@ -222,10 +223,10 @@ function LoginForm() {
           </div>
         </div>
 
-        {/* Subtle footer */}
-        <p className="text-center text-white/15 text-xs mt-6">
-          Midburn Budget Management
-        </p>
+        {/* Credit footer */}
+        <div className="flex justify-center mt-6">
+          <CreditLine />
+        </div>
       </div>
     </div>
   )

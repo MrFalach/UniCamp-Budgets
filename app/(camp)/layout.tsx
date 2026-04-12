@@ -6,6 +6,7 @@ import { MobileNav } from '@/components/MobileNav'
 import { CampBottomNav } from '@/components/BottomNav'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { signOut } from '@/lib/actions/users'
+import { CreditLine } from '@/components/CreditLine'
 
 export default async function CampLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -70,6 +71,9 @@ export default async function CampLayout({ children }: { children: React.ReactNo
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 md:pb-8">
         {children}
       </main>
+      <footer className="hidden md:flex justify-center fixed bottom-2 left-0 right-0 z-30 pointer-events-none">
+        <CreditLine />
+      </footer>
       <CampBottomNav />
     </div>
   )
