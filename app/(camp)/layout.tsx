@@ -31,7 +31,7 @@ export default async function CampLayout({ children }: { children: React.ReactNo
           <div className="h-14 sm:h-16 flex items-center justify-between">
             <div className="flex items-center gap-4 sm:gap-8">
               <div className="flex items-center gap-2.5">
-                <img src="/unicamp-logo.jpeg" alt="UniCamp" className="w-8 h-8 rounded-lg object-cover shadow-sm animate-float" />
+                <img src="/unicamp-logo.jpeg" alt="UniCamp" className="w-8 h-8 rounded-lg object-cover shadow-sm animate-magnetic-drift" />
                 <span className="font-bold text-lg hidden sm:inline">{settings?.event_name ?? 'UniCamp 2026'}</span>
               </div>
               <nav className="hidden md:flex items-center gap-1">

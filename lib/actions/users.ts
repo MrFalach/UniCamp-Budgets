@@ -96,3 +96,12 @@ export async function signOut() {
   const supabase = await createClient()
   await supabase.auth.signOut()
 }
+
+export async function markWelcomeSeen() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  await supabase.from('profiles').update({ has_seen_welcome: true }).eq('id', user.id)
+  revalidatePath('/camp')
+}

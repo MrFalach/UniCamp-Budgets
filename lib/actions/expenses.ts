@@ -18,9 +18,22 @@ export async function submitExpense(formData: FormData) {
   const campId = formData.get('camp_id') as string
   const amount = Number(formData.get('amount'))
   const description = formData.get('description') as string
-  const categoryId = formData.get('category_id') as string | null
+  let categoryId = formData.get('category_id') as string | null
   const receiptUrl = formData.get('receipt_url') as string | null
   const receiptType = formData.get('receipt_type') as string | null
+
+  // For camps (type='camp'), auto-assign "גיפטינג" category
+  if (!categoryId) {
+    const { data: camp } = await supabase.from('camps').select('type').eq('id', campId).single()
+    if (camp?.type === 'camp') {
+      const { data: giftingCat } = await supabase
+        .from('expense_categories')
+        .select('id')
+        .eq('name', 'גיפטינג')
+        .single()
+      if (giftingCat) categoryId = giftingCat.id
+    }
+  }
 
   const { data: expense, error } = await supabase
     .from('expenses')

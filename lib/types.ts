@@ -4,6 +4,7 @@ export type ExpenseStatus = 'pending' | 'approved' | 'rejected'
 export type ReceiptType = 'image' | 'pdf'
 export type ReimbursementStatus = 'pending' | 'paid'
 export type PaymentMethod = 'bank_transfer' | 'bit' | 'cash' | 'other'
+export type CampType = 'camp' | 'supplier'
 
 export interface AppSettings {
   id: number
@@ -26,6 +27,7 @@ export interface Profile {
 export interface Camp {
   id: string
   name: string
+  type: CampType
   total_budget: number
   description: string | null
   is_active: boolean
@@ -34,6 +36,14 @@ export interface Camp {
   bank_name: string | null
   bank_branch: string | null
   created_at: string
+}
+
+export interface CampCategory {
+  id: string
+  camp_id: string
+  category_id: string
+  created_at: string
+  category?: ExpenseCategory
 }
 
 export interface CampMember {

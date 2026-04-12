@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { BudgetProgressBar } from '@/components/BudgetProgressBar'
 import { StatusBadge } from '@/components/StatusBadge'
+import { WelcomeOverlay } from '@/components/WelcomeOverlay'
+import { ExpenseRulesButton } from '@/components/ExpenseRulesDialog'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { getUserCamp, getCampWithBudget } from '@/lib/actions/camps'
 import { getAppSettings } from '@/lib/actions/settings'
@@ -27,6 +29,9 @@ export default async function CampDashboard() {
     )
   }
 
+  const { data: profile } = await supabase.from('profiles').select('has_seen_welcome').eq('id', user.id).single()
+  const showWelcome = !profile?.has_seen_welcome
+
   const budget = await getCampWithBudget(camp.id)
   const seasonClosed = settings.season_status === 'closed'
 
@@ -46,6 +51,14 @@ export default async function CampDashboard() {
 
   return (
     <div className="space-y-8">
+      {showWelcome && (
+        <WelcomeOverlay
+          campName={camp.name}
+          totalBudget={budget.total_budget}
+          campType={camp.type}
+        />
+      )}
+
       {seasonClosed && (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300 rounded-lg p-4 text-sm flex items-center gap-3">
           <span className="text-lg">⚠️</span>
@@ -63,22 +76,25 @@ export default async function CampDashboard() {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between relative">
         <div>
           <h2 className="text-2xl font-bold">{camp.name}</h2>
-          <p className="text-muted-foreground mt-1">סקירת תקציב הקמפ</p>
+          <p className="text-muted-foreground mt-1 animate-clip-reveal">סקירת תקציב הקמפ</p>
         </div>
-        {!seasonClosed && (
-          <Link href="/camp/new-expense">
-            <Button>+ הגש הוצאה חדשה</Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          <ExpenseRulesButton />
+          {!seasonClosed && (
+            <Link href="/camp/new-expense">
+              <Button>+ הגש הוצאה חדשה</Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Budget metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-cards">
         {metrics.map((m) => (
-          <Card key={m.label} className={`border ${m.color} hover-lift`}>
+          <Card key={m.label} className={`border ${m.color} hover-lift tilt-hover`}>
             <CardContent className="pt-5 pb-4">
               <p className="text-xs font-medium text-muted-foreground mb-1">{m.label}</p>
               <p className={`text-2xl font-bold font-mono ${m.textColor}`}>{m.value}</p>
@@ -102,7 +118,7 @@ export default async function CampDashboard() {
           {!recentExpenses || recentExpenses.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">אין הוצאות עדיין</p>
           ) : (
-            <div className="space-y-1">
+            <div className="space-y-1 stagger-rows">
               {recentExpenses.map((expense) => (
                 <div key={expense.id} className="flex items-center justify-between py-3 border-b last:border-0">
                   <div className="flex items-center gap-3">

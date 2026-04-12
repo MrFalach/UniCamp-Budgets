@@ -16,25 +16,27 @@ import {
 } from '@/components/ui/select'
 import { ReceiptUpload } from '@/components/ReceiptUpload'
 import { submitExpense } from '@/lib/actions/expenses'
-import { getExpenseCategories } from '@/lib/actions/settings'
+import { getUserCampCategories, getUserCampType } from '@/lib/actions/camps'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import type { ExpenseCategory } from '@/lib/types'
+import type { CampType, ExpenseCategory } from '@/lib/types'
 
 export default function NewExpensePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<ExpenseCategory[]>([])
+  const [campType, setCampType] = useState<CampType | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [campId, setCampId] = useState<string | null>(null)
 
   useEffect(() => {
-    getExpenseCategories().then(setCategories)
-
-    // Get user's camp
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
+        // Get camp categories and type
+        getUserCampCategories(user.id).then(setCategories)
+        getUserCampType(user.id).then(setCampType)
+
         supabase
           .from('camp_members')
           .select('camp_id')
@@ -127,21 +129,24 @@ export default function NewExpensePage() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>קטגוריה</Label>
-            <Select name="category_id">
-              <SelectTrigger>
-                <SelectValue placeholder="בחר קטגוריה" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Show category picker only for suppliers — camps auto-get "גיפטינג" */}
+          {campType === 'supplier' && categories.length > 0 && (
+            <div className="space-y-2">
+              <Label>קטגוריה</Label>
+              <Select name="category_id">
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר קטגוריה" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>קבלה / חשבונית</Label>

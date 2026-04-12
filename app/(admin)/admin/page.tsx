@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { BudgetProgressBar } from '@/components/BudgetProgressBar'
 import { ActivityFeed } from '@/components/ActivityFeed'
@@ -42,13 +43,13 @@ export default async function AdminDashboard() {
         <h2 className="text-2xl font-bold gradient-text">
           <TypewriterText text={greeting} speed={50} />
         </h2>
-        <p className="text-muted-foreground mt-1">סקירה כללית של תקציבי הקמפים</p>
+        <p className="text-muted-foreground mt-1 animate-clip-reveal">סקירה כללית של תקציבי הקמפים והספקים</p>
       </div>
 
       {/* Metric cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 stagger-children">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 stagger-cards">
         {metrics.map((m) => (
-          <Card key={m.label} className={`border ${m.color} hover-lift`}>
+          <Card key={m.label} className={`border ${m.color} hover-lift tilt-hover`}>
             <CardContent className="pt-4 pb-3 sm:pt-5 sm:pb-4">
               <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1">{m.label}</p>
               <p className={`text-lg sm:text-2xl font-bold font-mono ${m.textColor}`}>
@@ -63,6 +64,9 @@ export default async function AdminDashboard() {
       <div className="flex flex-wrap gap-3">
         <Link href="/admin/camps">
           <Button variant="outline" className="border-dashed">+ קמפ חדש</Button>
+        </Link>
+        <Link href="/admin/suppliers">
+          <Button variant="outline" className="border-dashed">+ ספק חדש</Button>
         </Link>
         <Link href="/admin/expenses?status=pending">
           <Button className="bg-primary hover:bg-primary/90">
@@ -79,7 +83,7 @@ export default async function AdminDashboard() {
           {/* Camp budget list */}
           <Card className="shadow-sm lg:col-span-2">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">קמפים — ניצול תקציב</CardTitle>
+              <CardTitle className="text-lg">קמפים וספקים — ניצול תקציב</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
               {campBudgets.length === 0 ? (
@@ -88,9 +92,14 @@ export default async function AdminDashboard() {
                 campBudgets.map(({ camp, total_approved }) => (
                   <div key={camp.id} className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <Link href={`/admin/camps/${camp.id}`} className="font-semibold hover:text-primary transition-colors">
-                        {camp.name}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={camp.type === 'supplier' ? '/admin/suppliers' : `/admin/camps`} className="font-semibold hover:text-primary transition-colors">
+                          {camp.name}
+                        </Link>
+                        {camp.type === 'supplier' && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-violet-50 text-violet-600 border-violet-200">ספק</Badge>
+                        )}
+                      </div>
                       <span className="text-muted-foreground font-mono text-xs">
                         ₪{total_approved.toLocaleString('he-IL')} / ₪{camp.total_budget.toLocaleString('he-IL')}
                       </span>

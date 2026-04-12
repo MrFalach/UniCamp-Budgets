@@ -105,28 +105,54 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/3 p-4 relative">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      {/* Layered gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-violet-950 via-slate-900 to-indigo-950" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(124,58,237,0.25)_0%,_transparent_60%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_rgba(59,130,246,0.15)_0%,_transparent_50%)]" />
+
       <ParticleBackground />
-      <Card className="w-full max-w-md shadow-xl border-0 animate-scale-in backdrop-blur-sm gradient-border relative z-10">
-        <CardHeader className="text-center pb-2">
-          <img src="/unicamp-logo.jpeg" alt="UniCamp" className="w-20 h-20 rounded-2xl object-cover mx-auto mb-4 shadow-lg shadow-primary/20 animate-float" />
-          <CardTitle className="text-2xl font-bold gradient-text">UniCamp 2026</CardTitle>
-          <CardDescription className="mt-1">התחבר למערכת ניהול התקציב</CardDescription>
-        </CardHeader>
-        <CardContent>
+
+      {/* Liquid morph blobs */}
+      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-violet-500/10 blur-3xl animate-liquid-morph" />
+      <div className="absolute bottom-1/3 right-1/4 w-56 h-56 bg-blue-500/10 blur-3xl animate-liquid-morph" style={{ animationDelay: '-3s' }} />
+      <div className="absolute top-2/3 left-1/2 w-48 h-48 bg-indigo-500/8 blur-3xl animate-liquid-morph" style={{ animationDelay: '-1.5s' }} />
+
+      <div className="relative z-10 w-full max-w-md p-4 animate-scale-in">
+        {/* Logo + title outside the card */}
+        <div className="text-center mb-8">
+          <div className="relative inline-block mb-5">
+            <div className="absolute -inset-3 bg-gradient-to-br from-violet-500/30 to-blue-500/30 rounded-3xl blur-xl animate-pulse-soft" />
+            <img
+              src="/unicamp-logo.jpeg"
+              alt="UniCamp"
+              className="relative w-24 h-24 rounded-2xl object-cover shadow-2xl shadow-violet-500/20 ring-2 ring-white/10 animate-float"
+            />
+          </div>
+          <h1 className="text-3xl font-black text-white tracking-tight">
+            UniCamp 2026
+          </h1>
+          <p className="text-violet-200/60 mt-1.5 text-sm font-medium">
+            מערכת ניהול תקציב
+          </p>
+        </div>
+
+        {/* Glass card with rotating gradient border */}
+        <div className="bg-white/[0.07] backdrop-blur-xl rounded-2xl border border-white/[0.1] shadow-2xl shadow-black/20 p-6 sm:p-8 rotating-border">
           {reason === 'inactive' && (
-            <div className="bg-red-50 border border-red-200 text-red-800 rounded-md p-3 mb-4 text-sm">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-200 rounded-lg p-3 mb-5 text-sm">
               החשבון שלך אינו פעיל. פנה למנהל המערכת.
             </div>
           )}
           {reason === 'auth-error' && (
-            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-md p-3 mb-4 text-sm">
+            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-200 rounded-lg p-3 mb-5 text-sm">
               שגיאה בהתחברות. נסה שוב או בקש הזמנה חדשה מהמנהל.
             </div>
           )}
-          <form onSubmit={handleLogin} className="space-y-4">
+
+          <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">אימייל</Label>
+              <Label htmlFor="email" className="text-violet-100/80 text-sm font-medium">אימייל</Label>
               <Input
                 id="email"
                 type="email"
@@ -135,10 +161,11 @@ function LoginForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 dir="ltr"
+                className="bg-white/[0.06] border-white/[0.1] text-white placeholder:text-white/30 focus:border-violet-400/50 focus:ring-violet-400/20 h-11 rounded-xl"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">סיסמה</Label>
+              <Label htmlFor="password" className="text-violet-100/80 text-sm font-medium">סיסמה</Label>
               <Input
                 id="password"
                 type="password"
@@ -146,19 +173,30 @@ function LoginForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 dir="ltr"
+                className="bg-white/[0.06] border-white/[0.1] text-white placeholder:text-white/30 focus:border-violet-400/50 focus:ring-violet-400/20 h-11 rounded-xl"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'מתחבר...' : 'התחבר'}
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-11 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold shadow-lg shadow-violet-500/25 transition-all duration-300 hover:shadow-violet-500/40 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  מתחבר...
+                </span>
+              ) : 'התחבר'}
             </Button>
           </form>
-          <div className="mt-4 text-center">
+
+          <div className="mt-5 text-center">
             {forgotMode ? (
               <div className="space-y-3 animate-fade-in">
-                <p className="text-sm text-muted-foreground">הזן אימייל למעלה ולחץ:</p>
+                <p className="text-sm text-violet-200/50">הזן אימייל למעלה ולחץ:</p>
                 <Button
                   variant="outline"
-                  className="w-full"
+                  className="w-full h-10 rounded-xl bg-white/[0.05] border-white/[0.1] text-violet-200 hover:bg-white/[0.1] hover:text-white"
                   onClick={handleForgotPassword}
                   disabled={forgotLoading || !email}
                 >
@@ -166,7 +204,7 @@ function LoginForm() {
                 </Button>
                 <button
                   type="button"
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-xs text-violet-300/40 hover:text-violet-200 transition-colors"
                   onClick={() => setForgotMode(false)}
                 >
                   חזור להתחברות
@@ -175,15 +213,20 @@ function LoginForm() {
             ) : (
               <button
                 type="button"
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="text-sm text-violet-300/40 hover:text-violet-200 transition-colors"
                 onClick={() => setForgotMode(true)}
               >
                 שכחת סיסמה?
               </button>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Subtle footer */}
+        <p className="text-center text-white/15 text-xs mt-6">
+          Midburn Budget Management
+        </p>
+      </div>
     </div>
   )
 }
