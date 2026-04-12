@@ -22,17 +22,23 @@ export async function submitExpense(formData: FormData) {
   const receiptUrl = formData.get('receipt_url') as string | null
   const receiptType = formData.get('receipt_type') as string | null
 
-  // For camps (type='camp'), auto-assign "גיפטינג" category
-  if (!categoryId) {
-    const { data: camp } = await supabase.from('camps').select('type').eq('id', campId).single()
-    if (camp?.type === 'camp') {
-      const { data: giftingCat } = await supabase
-        .from('expense_categories')
-        .select('id')
-        .eq('name', 'גיפטינג')
-        .single()
-      if (giftingCat) categoryId = giftingCat.id
-    }
+  // Auto-assign category: camps → "גיפטינג", suppliers → their assigned category
+  const { data: camp } = await supabase.from('camps').select('type').eq('id', campId).single()
+  if (camp?.type === 'camp') {
+    const { data: giftingCat } = await supabase
+      .from('expense_categories')
+      .select('id')
+      .eq('name', 'גיפטינג')
+      .single()
+    if (giftingCat) categoryId = giftingCat.id
+  } else if (camp?.type === 'supplier' && !categoryId) {
+    const { data: assignedCat } = await supabase
+      .from('camp_categories')
+      .select('category_id')
+      .eq('camp_id', campId)
+      .limit(1)
+      .single()
+    if (assignedCat) categoryId = assignedCat.category_id
   }
 
   const { data: expense, error } = await supabase

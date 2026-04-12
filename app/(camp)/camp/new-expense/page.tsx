@@ -7,13 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { ReceiptUpload } from '@/components/ReceiptUpload'
 import { submitExpense } from '@/lib/actions/expenses'
 import { getUserCampCategories, getUserCampType } from '@/lib/actions/camps'
@@ -129,24 +122,32 @@ export default function NewExpensePage() {
             />
           </div>
 
-          {/* Show category picker only for suppliers — camps auto-get "גיפטינג" */}
-          {campType === 'supplier' && categories.length > 0 && (
-            <div className="space-y-2">
-              <Label>קטגוריה</Label>
-              <Select name="category_id">
-                <SelectTrigger>
-                  <SelectValue placeholder="בחר קטגוריה" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {/* Locked category display */}
+          <div className="space-y-2">
+            <Label>קטגוריה</Label>
+            {campType === 'camp' ? (
+              <div className="flex items-center gap-2 h-10 px-3 rounded-xl border bg-muted/50">
+                <span className="text-sm">🎁</span>
+                <span className="text-sm font-medium">גיפטינג</span>
+                <span className="text-[10px] text-muted-foreground mr-auto">🔒 נעול</span>
+              </div>
+            ) : categories.length > 0 ? (
+              <>
+                <input type="hidden" name="category_id" value={categories[0].id} />
+                <div className="flex items-center gap-2 h-10 px-3 rounded-xl border bg-muted/50">
+                  {categories[0].color && (
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: categories[0].color }} />
+                  )}
+                  <span className="text-sm font-medium">{categories[0].name}</span>
+                  <span className="text-[10px] text-muted-foreground mr-auto">🔒 נעול</span>
+                </div>
+              </>
+            ) : (
+              <div className="h-10 px-3 rounded-xl border bg-muted/50 flex items-center text-sm text-muted-foreground">
+                לא הוגדרה קטגוריה
+              </div>
+            )}
+          </div>
 
           <div className="space-y-2">
             <Label>קבלה / חשבונית</Label>

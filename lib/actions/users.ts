@@ -98,6 +98,8 @@ export async function resendInvite(email: string): Promise<string> {
 export async function signOut() {
   const supabase = await createClient()
   await supabase.auth.signOut()
+  const { redirect } = await import('next/navigation')
+  redirect('/login')
 }
 
 export async function markWelcomeSeen() {
