@@ -357,14 +357,10 @@ export const CreditLine = () => {
 
     // Walking heart — every WALK_INTERVAL
     useEffect(() => {
-        let goneTimeout: ReturnType<typeof setTimeout>;
         const walkInterval = setInterval(() => {
             setHeartState('walking');
         }, WALK_INTERVAL);
-        return () => {
-            clearInterval(walkInterval);
-            clearTimeout(goneTimeout);
-        };
+        return () => clearInterval(walkInterval);
     }, []);
 
     // Split display text into before/heart/after/name for rendering
