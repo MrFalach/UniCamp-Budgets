@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatusBadge } from '@/components/StatusBadge'
 import { ExpenseDetailDialog } from '@/components/ExpenseDetailDialog'
@@ -10,9 +12,10 @@ import type { ExpenseWithRelations, ExpenseStatus } from '@/lib/types'
 
 interface CampExpensesListProps {
   expenses: ExpenseWithRelations[]
+  seasonClosed?: boolean
 }
 
-export function CampExpensesList({ expenses }: CampExpensesListProps) {
+export function CampExpensesList({ expenses, seasonClosed = false }: CampExpensesListProps) {
   const [filter, setFilter] = useState<ExpenseStatus | 'all'>('all')
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithRelations | null>(null)
 
@@ -22,7 +25,14 @@ export function CampExpensesList({ expenses }: CampExpensesListProps) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">הוצאות</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">הוצאות</h2>
+        {!seasonClosed && (
+          <Link href="/camp/new-expense">
+            <Button>+ הגש הוצאה חדשה</Button>
+          </Link>
+        )}
+      </div>
 
       <Tabs value={filter} onValueChange={(v) => setFilter(v as ExpenseStatus | 'all')}>
         <TabsList>

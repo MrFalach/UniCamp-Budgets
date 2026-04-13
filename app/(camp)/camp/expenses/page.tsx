@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getUserCamp } from '@/lib/actions/camps'
+import { getAppSettings } from '@/lib/actions/settings'
 import { CampExpensesList } from './CampExpensesList'
 
 export default async function CampExpensesPage() {
@@ -17,11 +18,14 @@ export default async function CampExpensesPage() {
     )
   }
 
+  const settings = await getAppSettings()
+  const seasonClosed = settings.season_status === 'closed'
+
   const { data: expenses } = await supabase
     .from('expenses')
     .select('*, category:expense_categories(id, name, color)')
     .eq('camp_id', camp.id)
     .order('submitted_at', { ascending: false })
 
-  return <CampExpensesList expenses={expenses ?? []} />
+  return <CampExpensesList expenses={expenses ?? []} seasonClosed={seasonClosed} />
 }

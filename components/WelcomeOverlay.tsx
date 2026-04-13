@@ -37,9 +37,14 @@ export function WelcomeOverlay({ campName, totalBudget, campType }: WelcomeOverl
     }
   }, [step])
 
-  async function handleDone() {
+  // Mark welcome as seen as soon as it's shown, so it won't reappear
+  // on refresh / navigation away, even if the user doesn't click through.
+  useEffect(() => {
+    markWelcomeSeen().catch(() => {})
+  }, [])
+
+  function handleDone() {
     setExiting(true)
-    await markWelcomeSeen()
     setTimeout(() => setVisible(false), 400)
   }
 
@@ -137,6 +142,18 @@ export function WelcomeOverlay({ campName, totalBudget, campType }: WelcomeOverl
                     <span>{rule.text}</span>
                   </div>
                 ))}
+              </div>
+
+              <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950/30">
+                <span className="text-lg shrink-0 mt-0.5">🏦</span>
+                <div className="space-y-1">
+                  <p className="font-semibold text-amber-900 dark:text-amber-200">
+                    חשוב מאוד: הזינו את פרטי חשבון הבנק של ה{entityLabel}
+                  </p>
+                  <p className="text-amber-800/90 dark:text-amber-300/90">
+                    כנסו לדף <span className="font-semibold">״החזר״</span> ומלאו את פרטי חשבון הבנק — בלי זה לא נוכל להעביר לכם את הכסף בסוף העונה.
+                  </p>
+                </div>
               </div>
 
               <div className="text-center pt-1">
