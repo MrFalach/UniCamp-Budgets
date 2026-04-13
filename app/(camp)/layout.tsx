@@ -56,7 +56,7 @@ export default async function CampLayout({ children }: { children: React.ReactNo
                 <span className="text-sm font-medium">{profile.full_name ?? profile.email}</span>
               </div>
               <form action={signOut} className="hidden sm:block">
-                <Button variant="ghost" size="sm" className="text-muted-foreground">יציאה</Button>
+                <Button type="submit" variant="ghost" size="sm" className="text-muted-foreground">יציאה</Button>
               </form>
               <MobileNav
                 items={navItems}

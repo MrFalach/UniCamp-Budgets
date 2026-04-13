@@ -149,9 +149,11 @@
     animation: slideInLeft 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
-  /* Staggered children — apply to parent, children animate in sequence */
+  /* Staggered children — apply to parent, children animate in sequence.
+     NOTE: initial opacity:0 lives inside the slideUp keyframes (0%) rather
+     than as a static property, so hover rules that replace `animation`
+     don't cause the element to vanish. */
   .stagger-children > * {
-    opacity: 0;
     animation: slideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
   .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
@@ -234,9 +236,11 @@
 
   /* --- Advanced Animation Utilities --- */
 
-  /* Stagger cards — use on parent grid */
+  /* Stagger cards — use on parent grid.
+     NOTE: initial opacity:0 lives inside the stagger-rise keyframes (0%) only,
+     so hover rules that replace `animation` (e.g. tilt-hover) don't cause
+     the card to vanish. */
   .stagger-cards > * {
-    opacity: 0;
     animation: stagger-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
   .stagger-cards > *:nth-child(1) { animation-delay: 0s; }
@@ -246,9 +250,9 @@
   .stagger-cards > *:nth-child(5) { animation-delay: 0.32s; }
   .stagger-cards > *:nth-child(6) { animation-delay: 0.40s; }
 
-  /* Stagger rows — use on table body or list */
+  /* Stagger rows — use on table body or list.
+     NOTE: same reasoning as stagger-cards — keep opacity:0 inside keyframes only. */
   .stagger-rows > * {
-    opacity: 0;
     animation: slide-row 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
   .stagger-rows > *:nth-child(1) { animation-delay: 0s; }

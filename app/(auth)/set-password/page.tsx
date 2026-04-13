@@ -67,13 +67,17 @@ function PasswordMascot({ strength }: { strength: number }) {
       >
         {faces[strength]}
       </span>
-      {strength > 0 && (
-        <span className={`text-[11px] font-medium transition-colors duration-300 ${
-          strength === 1 ? 'text-red-300' : strength === 2 ? 'text-amber-300' : 'text-emerald-300'
-        }`}>
-          {labels[strength]}
-        </span>
-      )}
+      {/* Always rendered with reserved height to prevent layout shift */}
+      <span
+        className={`text-[11px] font-medium transition-colors duration-300 leading-none min-h-[11px] ${
+          strength === 0 ? 'opacity-0' :
+          strength === 1 ? 'text-red-300' :
+          strength === 2 ? 'text-amber-300' :
+          'text-emerald-300'
+        }`}
+      >
+        {labels[strength] || '\u00A0'}
+      </span>
     </div>
   )
 }
@@ -240,54 +244,68 @@ export default function SetPasswordPage() {
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-violet-100/70 text-sm font-medium">סיסמה חדשה</Label>
                   <div className="flex gap-2 items-center">
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      dir="ltr"
-                      placeholder="לפחות 6 תווים"
-                      className="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/25 focus:border-violet-400/40 focus:ring-violet-400/15 h-11 rounded-xl flex-1"
-                    />
-                    {password.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="text-lg hover:scale-125 transition-transform shrink-0 w-8 h-8 flex items-center justify-center"
-                      >
-                        {showPassword ? '🙈' : '👁️'}
-                      </button>
-                    )}
-                  </div>
-                  {showPassword && password.length > 0 && (
-                    <div className="text-sm tracking-widest text-center py-1" dir="ltr" style={{ animation: 'sp-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-                      {getEmojiPassword(password, 'pw')}
-                    </div>
-                  )}
-                  {/* Password mascot + strength */}
-                  {password.length > 0 && (
-                    <div className="flex items-center gap-3 pt-1">
-                      <PasswordMascot strength={passwordStrength} />
-                      <div className="flex-1 space-y-1">
-                        <div className="flex gap-1 h-1.5">
-                          {[1, 2, 3].map((level) => (
-                            <div
-                              key={level}
-                              className={`flex-1 rounded-full transition-all duration-500 ${
-                                passwordStrength >= level
-                                  ? level === 1 ? 'bg-red-400 shadow-sm shadow-red-400/30'
-                                  : level === 2 ? 'bg-amber-400 shadow-sm shadow-amber-400/30'
-                                  : 'bg-emerald-400 shadow-sm shadow-emerald-400/30'
-                                  : 'bg-white/[0.06]'
-                              }`}
-                            />
-                          ))}
+                    <div className="relative flex-1">
+                      <Input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        dir="ltr"
+                        placeholder="לפחות 6 תווים"
+                        className={`bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/25 focus:border-violet-400/40 focus:ring-violet-400/15 h-11 rounded-xl w-full ${
+                          showPassword && password.length > 0 ? 'text-transparent caret-violet-400' : ''
+                        }`}
+                      />
+                      {showPassword && password.length > 0 && (
+                        <div
+                          className="absolute inset-0 flex items-center px-2.5 text-sm tracking-widest pointer-events-none select-none overflow-hidden"
+                          dir="ltr"
+                          style={{ animation: 'sp-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+                        >
+                          {getEmojiPassword(password, 'pw')}
                         </div>
+                      )}
+                    </div>
+                    {/* Always rendered to reserve space — fades in once user starts typing */}
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={password.length > 0 ? 0 : -1}
+                      aria-hidden={password.length === 0}
+                      className={`text-lg hover:scale-125 transition-all duration-200 shrink-0 w-8 h-8 flex items-center justify-center ${
+                        password.length > 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                      }`}
+                    >
+                      {showPassword ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                  {/* Mascot + strength meter — always rendered, fades in on first keystroke */}
+                  <div
+                    className={`flex items-center gap-3 pt-1 transition-opacity duration-300 ${
+                      password.length > 0 ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    aria-hidden={password.length === 0}
+                  >
+                    <PasswordMascot strength={passwordStrength} />
+                    <div className="flex-1 space-y-1">
+                      <div className="flex gap-1 h-1.5">
+                        {[1, 2, 3].map((level) => (
+                          <div
+                            key={level}
+                            className={`flex-1 rounded-full transition-all duration-500 ${
+                              passwordStrength >= level
+                                ? level === 1 ? 'bg-red-400 shadow-sm shadow-red-400/30'
+                                : level === 2 ? 'bg-amber-400 shadow-sm shadow-amber-400/30'
+                                : 'bg-emerald-400 shadow-sm shadow-emerald-400/30'
+                                : 'bg-white/[0.06]'
+                            }`}
+                          />
+                        ))}
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -295,45 +313,56 @@ export default function SetPasswordPage() {
                   {confirm.length > 0 ? (passwordsMatch ? 'קולולולולו 🎉' : 'את אף פעם לא תמצאי התאמה, אולי פה תצליחי') : 'אימות סיסמה'}
                 </Label>
                   <div className="flex gap-2 items-center">
-                    <Input
-                      id="confirm"
-                      type="password"
-                      value={confirm}
-                      onChange={(e) => setConfirm(e.target.value)}
-                      required
-                      dir="ltr"
-                      placeholder="הקלד שוב את הסיסמה"
-                      className={`bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/25 focus:border-violet-400/40 focus:ring-violet-400/15 h-11 rounded-xl transition-all duration-300 flex-1 ${
-                        confirm.length > 0
-                          ? passwordsMatch
-                            ? 'border-emerald-500/30'
-                            : 'border-red-500/30'
-                          : ''
-                      }`}
-                    />
-                    {confirm.length > 0 && (
-                      <span
-                        className="text-base shrink-0"
-                        style={{ animation: 'sp-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
-                      >
-                        {passwordsMatch ? '✅' : '❌'}
-                      </span>
-                    )}
-                    {confirm.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirm(!showConfirm)}
-                        className="text-lg hover:scale-125 transition-transform shrink-0 w-8 h-8 flex items-center justify-center"
-                      >
-                        {showConfirm ? '🙈' : '👁️'}
-                      </button>
-                    )}
-                  </div>
-                  {showConfirm && confirm.length > 0 && (
-                    <div className="text-sm tracking-widest text-center py-1" dir="ltr" style={{ animation: 'sp-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-                      {getEmojiPassword(confirm, 'cf')}
+                    <div className="relative flex-1">
+                      <Input
+                        id="confirm"
+                        type="password"
+                        value={confirm}
+                        onChange={(e) => setConfirm(e.target.value)}
+                        required
+                        dir="ltr"
+                        placeholder="הקלד שוב את הסיסמה"
+                        className={`bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/25 focus:border-violet-400/40 focus:ring-violet-400/15 h-11 rounded-xl transition-all duration-300 w-full ${
+                          confirm.length > 0
+                            ? passwordsMatch
+                              ? 'border-emerald-500/30'
+                              : 'border-red-500/30'
+                            : ''
+                        } ${showConfirm && confirm.length > 0 ? 'text-transparent caret-violet-400' : ''}`}
+                      />
+                      {showConfirm && confirm.length > 0 && (
+                        <div
+                          className="absolute inset-0 flex items-center px-2.5 text-sm tracking-widest pointer-events-none select-none overflow-hidden"
+                          dir="ltr"
+                          style={{ animation: 'sp-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+                        >
+                          {getEmojiPassword(confirm, 'cf')}
+                        </div>
+                      )}
                     </div>
-                  )}
+                    {/* Always rendered to reserve space; pops in once user types */}
+                    <span
+                      key={`${passwordsMatch}-${confirm.length > 0}`}
+                      className={`text-base shrink-0 w-5 text-center transition-opacity duration-200 ${
+                        confirm.length > 0 ? 'opacity-100' : 'opacity-0'
+                      }`}
+                      style={confirm.length > 0 ? { animation: 'sp-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' } : undefined}
+                      aria-hidden={confirm.length === 0}
+                    >
+                      {passwordsMatch ? '✅' : '❌'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      tabIndex={confirm.length > 0 ? 0 : -1}
+                      aria-hidden={confirm.length === 0}
+                      className={`text-lg hover:scale-125 transition-all duration-200 shrink-0 w-8 h-8 flex items-center justify-center ${
+                        confirm.length > 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                      }`}
+                    >
+                      {showConfirm ? '🙈' : '👁️'}
+                    </button>
+                  </div>
                 </div>
 
                 <Button

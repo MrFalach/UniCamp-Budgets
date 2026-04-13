@@ -10,8 +10,8 @@ export function ThemeToggle() {
 
   useEffect(() => {
     const stored = localStorage.getItem('theme')
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const isDark = stored === 'dark' || (!stored && prefersDark)
+    // Default to dark mode when no preference is stored
+    const isDark = stored ? stored === 'dark' : true
     document.documentElement.classList.toggle('dark', isDark)
     // Schedule state update for next microtask to avoid lint warning
     queueMicrotask(() => {
