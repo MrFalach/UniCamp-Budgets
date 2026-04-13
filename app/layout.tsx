@@ -54,9 +54,12 @@ export default function RootLayout({
     >
       <head>
         <script
-          // Apply theme before hydration to avoid FOUC. Default is dark.
+          // Apply theme before hydration to avoid FOUC. Default is dark for everyone.
+          // Storage key is versioned ('theme-v2'): bumping it forces a one-time reset
+          // so any users with the old 'theme=light' preference start fresh in dark.
+          // Future toggles persist normally under the new key.
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=localStorage.getItem('theme');var isDark=s?s==='dark':true;document.documentElement.classList.toggle('dark',isDark);}catch(e){document.documentElement.classList.add('dark');}})();`,
+            __html: `(function(){try{var s=localStorage.getItem('theme-v2');var isDark=s?s==='dark':true;document.documentElement.classList.toggle('dark',isDark);}catch(e){document.documentElement.classList.add('dark');}})();`,
           }}
         />
       </head>
