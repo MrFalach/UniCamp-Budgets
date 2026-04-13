@@ -79,7 +79,7 @@ export async function getCurrentUser() {
 
 export async function resendInvite(email: string): Promise<string> {
   const adminClient = createAdminClient()
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3001'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
   // Generate a new recovery link (no email sent)
   const { data, error } = await adminClient.auth.admin.generateLink({
