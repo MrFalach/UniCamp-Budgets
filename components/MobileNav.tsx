@@ -97,7 +97,7 @@ export function MobileNav({ items, eventName, userName, seasonStatus, signOutAct
             </div>
             {signOutAction && (
               <form action={signOutAction}>
-                <Button variant="ghost" size="sm" className="text-muted-foreground">יציאה</Button>
+                <Button type="submit" variant="ghost" size="sm" className="text-muted-foreground">יציאה</Button>
               </form>
             )}
           </div>

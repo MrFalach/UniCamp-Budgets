@@ -50,8 +50,16 @@ export default function RootLayout({
     <html
       lang="he"
       dir="rtl"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
+      <head>
+        <script
+          // Apply theme before hydration to avoid FOUC. Default is dark.
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('theme');var isDark=s?s==='dark':true;document.documentElement.classList.toggle('dark',isDark);}catch(e){document.documentElement.classList.add('dark');}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
         <Toaster position="top-center" dir="rtl" richColors />
