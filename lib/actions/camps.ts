@@ -179,7 +179,7 @@ export async function createCamp(formData: FormData) {
     await supabase.from('profiles').update({ role: 'camp' }).eq('id', campUserId)
   } else {
     // Create user and generate invite link (no email sent — admin shares the link manually)
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3001'
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
     const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
       type: 'invite',
       email,
