@@ -9,7 +9,10 @@ export function ThemeToggle() {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem('theme')
+    // Versioned key: bumping 'theme-v2' resets all existing preferences once,
+    // so everyone starts in dark on next visit. Stay in sync with the
+    // pre-hydration script in app/layout.tsx.
+    const stored = localStorage.getItem('theme-v2')
     // Default to dark mode when no preference is stored
     const isDark = stored ? stored === 'dark' : true
     document.documentElement.classList.toggle('dark', isDark)
@@ -24,7 +27,7 @@ export function ThemeToggle() {
     const next = !dark
     setDark(next)
     document.documentElement.classList.toggle('dark', next)
-    localStorage.setItem('theme', next ? 'dark' : 'light')
+    localStorage.setItem('theme-v2', next ? 'dark' : 'light')
   }, [dark])
 
   if (!mounted) return <div className="w-8 h-8" />
