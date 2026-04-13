@@ -18,9 +18,28 @@ export async function submitExpense(formData: FormData) {
   const campId = formData.get('camp_id') as string
   const amount = Number(formData.get('amount'))
   const description = formData.get('description') as string
-  const categoryId = formData.get('category_id') as string | null
+  let categoryId = formData.get('category_id') as string | null
   const receiptUrl = formData.get('receipt_url') as string | null
   const receiptType = formData.get('receipt_type') as string | null
+
+  // Auto-assign category: camps → "גיפטינג", suppliers → their assigned category
+  const { data: camp } = await supabase.from('camps').select('type, name').eq('id', campId).single()
+  if (camp?.type === 'camp') {
+    const { data: giftingCat } = await supabase
+      .from('expense_categories')
+      .select('id')
+      .eq('name', 'גיפטינג')
+      .single()
+    if (giftingCat) categoryId = giftingCat.id
+  } else if (camp?.type === 'supplier' && !categoryId) {
+    const { data: assignedCat } = await supabase
+      .from('camp_categories')
+      .select('category_id')
+      .eq('camp_id', campId)
+      .limit(1)
+      .single()
+    if (assignedCat) categoryId = assignedCat.category_id
+  }
 
   const { data: expense, error } = await supabase
     .from('expenses')
@@ -37,9 +56,6 @@ export async function submitExpense(formData: FormData) {
     .single()
 
   if (error) throw new Error(error.message)
-
-  // Get camp name for notification
-  const { data: camp } = await supabase.from('camps').select('name').eq('id', campId).single()
 
   await sendNotification({
     type: 'expense_submitted',

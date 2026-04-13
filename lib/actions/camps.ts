@@ -5,9 +5,21 @@ import { createClient } from '@/lib/supabase/server'
 import { logAction } from '@/lib/audit'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendNotification } from '@/lib/email'
-import type { Camp } from '@/lib/types'
+import type { Camp, CampType, ExpenseCategory } from '@/lib/types'
 
-export async function getCamps() {
+export async function getCamps(type: CampType = 'camp') {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('camps')
+    .select('*')
+    .eq('type', type)
+    .order('name')
+
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function getAllCampsAndSuppliers() {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('camps')
@@ -18,9 +30,9 @@ export async function getCamps() {
   return data
 }
 
-export async function getCampsWithUsers() {
+export async function getCampsWithUsers(type: CampType = 'camp') {
   const supabase = await createClient()
-  const { data: camps } = await supabase.from('camps').select('*').order('name')
+  const { data: camps } = await supabase.from('camps').select('*').eq('type', type).order('name')
   if (!camps) return []
 
   const { data: members } = await supabase
@@ -60,10 +72,12 @@ export async function getCampWithBudget(campId: string) {
   }
 }
 
-export async function getAllCampsWithBudgets() {
+export async function getAllCampsWithBudgets(type?: CampType) {
   const supabase = await createClient()
 
-  const { data: camps } = await supabase.from('camps').select('*').order('name')
+  let query = supabase.from('camps').select('*').order('name')
+  if (type) query = query.eq('type', type)
+  const { data: camps } = await query
   if (!camps) return []
 
   const { data: expenses } = await supabase
@@ -100,14 +114,19 @@ export async function createCamp(formData: FormData) {
   const bankAccountNumber = formData.get('bank_account_number') as string | null
   const bankName = formData.get('bank_name') as string | null
   const bankBranch = formData.get('bank_branch') as string | null
+  const type = (formData.get('type') as CampType) || 'camp'
+  const categoryIds = formData.getAll('category_ids') as string[]
 
-  if (!email) throw new Error('יש להזין אימייל למנהל הקמפ')
+  if (!email) {
+    throw new Error(type === 'supplier' ? 'יש להזין אימייל למנהל הספק' : 'יש להזין אימייל למנהל הקמפ')
+  }
 
-  // 1. Create the camp
+  // 1. Create the camp/supplier
   const { data: camp, error } = await supabase
     .from('camps')
     .insert({
       name,
+      type,
       total_budget: totalBudget,
       description: description || null,
       bank_account_name: bankAccountName || null,
@@ -120,7 +139,29 @@ export async function createCamp(formData: FormData) {
 
   if (error) throw new Error(error.message)
 
-  // 2. Find or invite the user
+  // 2. Assign categories
+  if (type === 'camp') {
+    // Auto-assign "גיפטינג" category
+    const { data: giftingCat } = await supabase
+      .from('expense_categories')
+      .select('id')
+      .eq('name', 'גיפטינג')
+      .single()
+
+    if (giftingCat) {
+      await supabase.from('camp_categories').insert({
+        camp_id: camp.id,
+        category_id: giftingCat.id,
+      })
+    }
+  } else if (categoryIds.length > 0) {
+    // Assign selected categories to supplier
+    await supabase.from('camp_categories').insert(
+      categoryIds.map((catId) => ({ camp_id: camp.id, category_id: catId }))
+    )
+  }
+
+  // 3. Find or invite the user
   const adminClient = createAdminClient()
   let campUserId: string
   let inviteUrl: string | null = null
@@ -156,7 +197,7 @@ export async function createCamp(formData: FormData) {
     inviteUrl = linkData.properties?.action_link ?? null
   }
 
-  // 3. Assign user to camp
+  // 4. Assign user to camp/supplier
   const { error: memberError } = await supabase
     .from('camp_members')
     .insert({ camp_id: camp.id, user_id: campUserId })
@@ -165,7 +206,8 @@ export async function createCamp(formData: FormData) {
     throw new Error(memberError.message)
   }
 
-  await logAction(user.id, 'camp_created', 'camp', camp.id, undefined, { name, total_budget: totalBudget, email })
+  const entityType = type === 'supplier' ? 'supplier' : 'camp'
+  await logAction(user.id, `${entityType}_created`, entityType, camp.id, undefined, { name, total_budget: totalBudget, email })
 
   revalidatePath('/admin')
   return { camp, inviteUrl }
@@ -297,4 +339,63 @@ export async function updateCampBankDetails(campId: string, formData: FormData) 
 
   revalidatePath('/camp')
   revalidatePath('/admin')
+}
+
+// --- Camp Categories ---
+
+export async function getCampCategories(campId: string): Promise<ExpenseCategory[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('camp_categories')
+    .select('category:expense_categories(*)')
+    .eq('camp_id', campId)
+
+  if (error) throw new Error(error.message)
+  return (data?.map((d) => d.category).filter(Boolean) ?? []) as unknown as ExpenseCategory[]
+}
+
+export async function updateCampCategories(campId: string, categoryIds: string[]) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  // Delete existing
+  await supabase.from('camp_categories').delete().eq('camp_id', campId)
+
+  // Insert new
+  if (categoryIds.length > 0) {
+    const { error } = await supabase.from('camp_categories').insert(
+      categoryIds.map((catId) => ({ camp_id: campId, category_id: catId }))
+    )
+    if (error) throw new Error(error.message)
+  }
+
+  revalidatePath('/admin')
+}
+
+export async function getUserCampCategories(userId: string): Promise<ExpenseCategory[]> {
+  const supabase = await createClient()
+  const { data: membership } = await supabase
+    .from('camp_members')
+    .select('camp_id')
+    .eq('user_id', userId)
+    .limit(1)
+    .single()
+
+  if (!membership) return []
+
+  return getCampCategories(membership.camp_id)
+}
+
+export async function getUserCampType(userId: string): Promise<CampType | null> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('camp_members')
+    .select('camp:camps(type)')
+    .eq('user_id', userId)
+    .limit(1)
+    .single()
+
+  if (!data?.camp) return null
+  return (data.camp as unknown as { type: CampType }).type
 }

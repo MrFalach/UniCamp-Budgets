@@ -5,6 +5,7 @@ on conflict (id) do nothing;
 
 -- Seed expense categories
 insert into expense_categories (name, color, sort_order) values
+  ('גיפטינג', '#F472B6', 0),
   ('ציוד', '#3B82F6', 1),
   ('מזון', '#10B981', 2),
   ('אנרגיה', '#F59E0B', 3),

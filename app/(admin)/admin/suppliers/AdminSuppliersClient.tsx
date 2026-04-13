@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,34 +13,47 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { EmptyState } from '@/components/EmptyState'
-import { CampFormDialog } from '@/components/CampFormDialog'
+import { SupplierFormDialog } from '@/components/SupplierFormDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { BudgetProgressBar } from '@/components/BudgetProgressBar'
-import { deleteCamp } from '@/lib/actions/camps'
+import { deleteCamp, getCampCategories } from '@/lib/actions/camps'
 import { resendInvite } from '@/lib/actions/users'
 import { formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
-import type { Camp, CampBudgetSummary } from '@/lib/types'
+import type { Camp, CampBudgetSummary, ExpenseCategory } from '@/lib/types'
 
 interface Props {
-  campBudgets: CampBudgetSummary[]
-  campEmails: Record<string, string | null>
+  supplierBudgets: CampBudgetSummary[]
+  supplierEmails: Record<string, string | null>
   threshold: number
+  allCategories: ExpenseCategory[]
 }
 
-export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) {
+export function AdminSuppliersClient({ supplierBudgets, supplierEmails, threshold, allCategories }: Props) {
   const [formOpen, setFormOpen] = useState(false)
-  const [editCamp, setEditCamp] = useState<Camp | null>(null)
+  const [editSupplier, setEditSupplier] = useState<Camp | null>(null)
+  const [editCategoryIds, setEditCategoryIds] = useState<string[]>([])
   const [deleteTarget, setDeleteTarget] = useState<Camp | null>(null)
+
+  // Load assigned categories when editing
+  useEffect(() => {
+    if (editSupplier) {
+      getCampCategories(editSupplier.id).then((cats) => {
+        setEditCategoryIds(cats.map((c) => c.id))
+      })
+    } else {
+      setEditCategoryIds([])
+    }
+  }, [editSupplier])
 
   async function handleDelete() {
     if (!deleteTarget) return
     try {
       await deleteCamp(deleteTarget.id)
-      toast.success('הקמפ נמחק')
+      toast.success('הספק נמחק')
       setDeleteTarget(null)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'שגיאה במחיקת הקמפ')
+      toast.error(err instanceof Error ? err.message : 'שגיאה במחיקת הספק')
     }
   }
 
@@ -48,36 +61,36 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">קמפים</h2>
-          <p className="text-sm text-muted-foreground mt-1">ניהול קמפים ותקציבים</p>
+          <h2 className="text-2xl font-bold tracking-tight">ספקים</h2>
+          <p className="text-sm text-muted-foreground mt-1">ניהול ספקים ותקציבים</p>
         </div>
-        <Button onClick={() => { setEditCamp(null); setFormOpen(true) }}>+ קמפ חדש</Button>
+        <Button onClick={() => { setEditSupplier(null); setFormOpen(true) }}>+ ספק חדש</Button>
       </div>
 
       {/* Mobile card view */}
       <div className="md:hidden space-y-3 stagger-cards">
-        {campBudgets.length === 0 ? (
-          <EmptyState icon="camps" title="אין קמפים עדיין" description="צור קמפ חדש כדי להתחיל" />
+        {supplierBudgets.length === 0 ? (
+          <EmptyState icon="camps" title="אין ספקים עדיין" description="צור ספק חדש כדי להתחיל" />
         ) : (
-          campBudgets.map(({ camp, total_approved, remaining, usage_percent }) => (
-            <Card key={camp.id} className="shadow-sm">
+          supplierBudgets.map(({ camp: supplier, total_approved, remaining, usage_percent }) => (
+            <Card key={supplier.id} className="shadow-sm">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-base">{camp.name}</span>
+                  <span className="font-semibold text-base">{supplier.name}</span>
                   <Badge
                     variant="outline"
-                    className={camp.is_active
+                    className={supplier.is_active
                       ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       : 'bg-gray-50 text-gray-500 border-gray-200'
                     }
                   >
-                    {camp.is_active ? 'פעיל' : 'לא פעיל'}
+                    {supplier.is_active ? 'פעיל' : 'לא פעיל'}
                   </Badge>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="bg-muted/50 rounded-lg p-2">
                     <p className="text-[10px] text-muted-foreground">תקציב</p>
-                    <p className="font-mono text-sm font-medium">{formatCurrency(camp.total_budget)}</p>
+                    <p className="font-mono text-sm font-medium">{formatCurrency(supplier.total_budget)}</p>
                   </div>
                   <div className="bg-emerald-50 rounded-lg p-2">
                     <p className="text-[10px] text-muted-foreground">מאושר</p>
@@ -89,21 +102,21 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <BudgetProgressBar total={camp.total_budget} used={total_approved} threshold={threshold} showLabels={false} />
+                  <BudgetProgressBar total={supplier.total_budget} used={total_approved} threshold={threshold} showLabels={false} />
                   <span className="text-xs text-muted-foreground font-mono w-10">{usage_percent.toFixed(0)}%</span>
                 </div>
                 <div className="flex gap-1 pt-1 border-t">
-                  {campEmails[camp.id] && (
+                  {supplierEmails[supplier.id] && (
                     <Button
                       variant="ghost"
                       size="sm"
                       className="text-xs text-primary hover:text-primary flex-1"
                       onClick={async () => {
                         try {
-                          const url = await resendInvite(campEmails[camp.id]!)
+                          const url = await resendInvite(supplierEmails[supplier.id]!)
                           if (url) {
                             await navigator.clipboard.writeText(url)
-                            toast.success('לינק הזמנה הועתק!', { description: 'שלח אותו למנהל הקמפ' })
+                            toast.success('לינק הזמנה הועתק!', { description: 'שלח אותו למנהל הספק' })
                           }
                         } catch {
                           toast.error('שגיאה ביצירת לינק הזמנה')
@@ -113,10 +126,10 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
                       העתק לינק
                     </Button>
                   )}
-                  <Button variant="ghost" size="sm" className="text-xs flex-1" onClick={() => { setEditCamp(camp); setFormOpen(true) }}>
+                  <Button variant="ghost" size="sm" className="text-xs flex-1" onClick={() => { setEditSupplier(supplier); setFormOpen(true) }}>
                     ערוך
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-xs text-destructive hover:text-destructive flex-1" onClick={() => setDeleteTarget(camp)}>
+                  <Button variant="ghost" size="sm" className="text-xs text-destructive hover:text-destructive flex-1" onClick={() => setDeleteTarget(supplier)}>
                     מחק
                   </Button>
                 </div>
@@ -143,56 +156,56 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {campBudgets.length === 0 ? (
+              {supplierBudgets.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8}>
-                    <EmptyState icon="camps" title="אין קמפים עדיין" description="צור קמפ חדש כדי להתחיל" />
+                    <EmptyState icon="camps" title="אין ספקים עדיין" description="צור ספק חדש כדי להתחיל" />
                   </TableCell>
                 </TableRow>
               ) : (
-                campBudgets.map(({ camp, total_approved, remaining, usage_percent }) => (
-                  <TableRow key={camp.id}>
+                supplierBudgets.map(({ camp: supplier, total_approved, remaining, usage_percent }) => (
+                  <TableRow key={supplier.id}>
                     <TableCell>
-                      <span className="font-semibold">{camp.name}</span>
+                      <span className="font-semibold">{supplier.name}</span>
                     </TableCell>
                     <TableCell>
                       <span dir="ltr" className="text-sm text-muted-foreground">
-                        {campEmails[camp.id] ?? '—'}
+                        {supplierEmails[supplier.id] ?? '—'}
                       </span>
                     </TableCell>
-                    <TableCell className="font-mono text-sm">{formatCurrency(camp.total_budget)}</TableCell>
+                    <TableCell className="font-mono text-sm">{formatCurrency(supplier.total_budget)}</TableCell>
                     <TableCell className="font-mono text-sm text-emerald-600">{formatCurrency(total_approved)}</TableCell>
                     <TableCell className="font-mono text-sm">{formatCurrency(remaining)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <BudgetProgressBar total={camp.total_budget} used={total_approved} threshold={threshold} showLabels={false} />
+                        <BudgetProgressBar total={supplier.total_budget} used={total_approved} threshold={threshold} showLabels={false} />
                         <span className="text-xs text-muted-foreground font-mono w-10">{usage_percent.toFixed(0)}%</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={camp.is_active
+                        className={supplier.is_active
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           : 'bg-gray-50 text-gray-500 border-gray-200'
                         }
                       >
-                        {camp.is_active ? 'פעיל' : 'לא פעיל'}
+                        {supplier.is_active ? 'פעיל' : 'לא פעיל'}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        {campEmails[camp.id] && (
+                        {supplierEmails[supplier.id] && (
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-xs text-primary hover:text-primary"
                             onClick={async () => {
                               try {
-                                const url = await resendInvite(campEmails[camp.id]!)
+                                const url = await resendInvite(supplierEmails[supplier.id]!)
                                 if (url) {
                                   await navigator.clipboard.writeText(url)
-                                  toast.success('לינק הזמנה הועתק!', { description: 'שלח אותו למנהל הקמפ' })
+                                  toast.success('לינק הזמנה הועתק!', { description: 'שלח אותו למנהל הספק' })
                                 }
                               } catch {
                                 toast.error('שגיאה ביצירת לינק הזמנה')
@@ -206,7 +219,7 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
                           variant="ghost"
                           size="sm"
                           className="text-xs"
-                          onClick={() => { setEditCamp(camp); setFormOpen(true) }}
+                          onClick={() => { setEditSupplier(supplier); setFormOpen(true) }}
                         >
                           ערוך
                         </Button>
@@ -214,7 +227,7 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
                           variant="ghost"
                           size="sm"
                           className="text-xs text-destructive hover:text-destructive"
-                          onClick={() => setDeleteTarget(camp)}
+                          onClick={() => setDeleteTarget(supplier)}
                         >
                           מחק
                         </Button>
@@ -228,9 +241,11 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
         </CardContent>
       </Card>
 
-      <CampFormDialog
-        camp={editCamp}
-        campEmail={editCamp ? campEmails[editCamp.id] : null}
+      <SupplierFormDialog
+        supplier={editSupplier}
+        supplierEmail={editSupplier ? supplierEmails[editSupplier.id] : null}
+        allCategories={allCategories}
+        assignedCategoryIds={editCategoryIds}
         open={formOpen}
         onOpenChange={setFormOpen}
       />
@@ -238,8 +253,8 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="מחיקת קמפ"
-        description={`האם אתה בטוח שברצונך למחוק את "${deleteTarget?.name}"? לא ניתן למחוק קמפ שיש לו הוצאות.`}
+        title="מחיקת ספק"
+        description={`האם אתה בטוח שברצונך למחוק את "${deleteTarget?.name}"? לא ניתן למחוק ספק שיש לו הוצאות.`}
         onConfirm={handleDelete}
         confirmLabel="מחק"
         variant="destructive"

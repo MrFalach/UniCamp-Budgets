@@ -501,14 +501,16 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
           </DialogHeader>
           <form onSubmit={handleManualExpense} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">קמפ *</label>
+              <label className="text-sm font-medium">קמפ / ספק *</label>
               <Select name="camp_id" required>
                 <SelectTrigger>
-                  <SelectValue placeholder="בחר קמפ" />
+                  <SelectValue placeholder="בחר קמפ או ספק" />
                 </SelectTrigger>
                 <SelectContent>
                   {camps.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}{c.type === 'supplier' ? ' (ספק)' : ''}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

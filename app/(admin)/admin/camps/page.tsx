@@ -4,12 +4,11 @@ import { AdminCampsClient } from './AdminCampsClient'
 
 export default async function AdminCampsPage() {
   const [campBudgets, campsWithUsers, settings] = await Promise.all([
-    getAllCampsWithBudgets(),
-    getCampsWithUsers(),
+    getAllCampsWithBudgets('camp'),
+    getCampsWithUsers('camp'),
     getAppSettings(),
   ])
 
-  // Merge user emails into campBudgets
   const campEmails: Record<string, string | null> = {}
   for (const c of campsWithUsers) {
     campEmails[c.id] = c.user_email

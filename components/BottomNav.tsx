@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboardIcon, ReceiptTextIcon, WalletIcon, UsersIcon, BarChart3Icon, TentIcon, PlusCircleIcon } from 'lucide-react'
+import { LayoutDashboardIcon, ReceiptTextIcon, WalletIcon, UsersIcon, BarChart3Icon, TentIcon, PlusCircleIcon, PackageIcon } from 'lucide-react'
 
 interface NavItem {
   href: string
@@ -61,7 +61,7 @@ export function AdminBottomNav({ pendingCount }: { pendingCount?: number | null 
     { href: '/admin', label: 'דשבורד', icon: <LayoutDashboardIcon className="h-5 w-5" /> },
     { href: '/admin/expenses', label: 'הוצאות', icon: <ReceiptTextIcon className="h-5 w-5" />, badge: pendingCount },
     { href: '/admin/camps', label: 'קמפים', icon: <TentIcon className="h-5 w-5" /> },
-    { href: '/admin/users', label: 'משתמשים', icon: <UsersIcon className="h-5 w-5" /> },
+    { href: '/admin/suppliers', label: 'ספקים', icon: <PackageIcon className="h-5 w-5" /> },
     { href: '/admin/analytics', label: 'אנליטיקס', icon: <BarChart3Icon className="h-5 w-5" /> },
   ]
   return <BottomNav items={items} />

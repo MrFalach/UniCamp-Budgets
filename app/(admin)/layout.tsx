@@ -8,6 +8,7 @@ import { AdminBottomNav } from '@/components/BottomNav'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { signOut } from '@/lib/actions/users'
 import { getAppSettings } from '@/lib/actions/settings'
+import { CreditLine } from '@/components/CreditLine'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -28,6 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/admin', label: 'דשבורד' },
     { href: '/admin/expenses', label: 'הוצאות', badge: pendingCount },
     { href: '/admin/camps', label: 'קמפים' },
+    { href: '/admin/suppliers', label: 'ספקים' },
     { href: '/admin/users', label: 'משתמשים' },
     { href: '/admin/analytics', label: 'אנליטיקס' },
     { href: '/admin/reimbursements', label: 'החזרים' },
@@ -41,7 +43,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="h-14 sm:h-16 flex items-center justify-between">
             <div className="flex items-center gap-4 sm:gap-8">
               <div className="flex items-center gap-2.5">
-                <img src="/unicamp-logo.jpeg" alt="UniCamp" className="w-8 h-8 rounded-lg object-cover shadow-sm animate-float" />
+                <img src="/unicamp-logo.jpeg" alt="UniCamp" className="w-8 h-8 rounded-lg object-cover shadow-sm animate-magnetic-drift" />
                 <span className="font-bold text-lg hidden sm:inline">{settings.event_name}</span>
                 <Badge
                   variant={settings.season_status === 'active' ? 'default' : 'secondary'}
@@ -90,6 +92,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <main className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 md:pb-8">
         {children}
       </main>
+      <footer className="hidden md:flex justify-center fixed bottom-2 left-0 right-0 z-30 pointer-events-none">
+        <CreditLine />
+      </footer>
       <AdminBottomNav pendingCount={pendingCount} />
     </div>
   )

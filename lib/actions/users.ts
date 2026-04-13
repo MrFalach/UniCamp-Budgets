@@ -21,8 +21,11 @@ export async function inviteUser(email: string) {
   if (!currentUser) throw new Error('Unauthorized')
 
   const adminClient = createAdminClient()
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
-  const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email)
+  const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${siteUrl}/auth/callback?next=/set-password`,
+  })
   if (error) throw new Error(error.message)
 
   await logAction(currentUser.id, 'user_invited', 'profile', data.user.id, undefined, { email })
@@ -95,4 +98,15 @@ export async function resendInvite(email: string): Promise<string> {
 export async function signOut() {
   const supabase = await createClient()
   await supabase.auth.signOut()
+  const { redirect } = await import('next/navigation')
+  redirect('/login')
+}
+
+export async function markWelcomeSeen() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  await supabase.from('profiles').update({ has_seen_welcome: true }).eq('id', user.id)
+  revalidatePath('/camp')
 }
