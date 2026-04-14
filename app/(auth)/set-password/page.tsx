@@ -276,7 +276,7 @@ export default function SetPasswordPage() {
                       onClick={() => setShowPassword(!showPassword)}
                       tabIndex={password.length > 0 ? 0 : -1}
                       aria-hidden={password.length === 0}
-                      className={`text-lg hover:scale-125 transition-all duration-200 shrink-0 w-8 h-8 flex items-center justify-center ${
+                      className={`text-lg hover:scale-125 transition-all duration-200 shrink-0 w-10 h-10 flex items-center justify-center ${
                         password.length > 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'
                       }`}
                     >
@@ -358,7 +358,7 @@ export default function SetPasswordPage() {
                       onClick={() => setShowConfirm(!showConfirm)}
                       tabIndex={confirm.length > 0 ? 0 : -1}
                       aria-hidden={confirm.length === 0}
-                      className={`text-lg hover:scale-125 transition-all duration-200 shrink-0 w-8 h-8 flex items-center justify-center ${
+                      className={`text-lg hover:scale-125 transition-all duration-200 shrink-0 w-10 h-10 flex items-center justify-center ${
                         confirm.length > 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'
                       }`}
                     >

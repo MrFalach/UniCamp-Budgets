@@ -239,6 +239,7 @@ function LoginForm() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   dir="ltr"
+                  autoComplete="email"
                   className="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/25 focus:border-violet-400/40 focus:ring-violet-400/15 h-11 rounded-xl"
                 />
               </div>
@@ -251,6 +252,7 @@ function LoginForm() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   dir="ltr"
+                  autoComplete="current-password"
                   className="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/25 focus:border-violet-400/40 focus:ring-violet-400/15 h-11 rounded-xl"
                 />
               </div>

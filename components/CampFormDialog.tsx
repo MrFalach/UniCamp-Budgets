@@ -170,7 +170,7 @@ export function CampFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? `ערוך ${entityLabel}` : `${entityLabel} חדש`}</DialogTitle>
         </DialogHeader>
