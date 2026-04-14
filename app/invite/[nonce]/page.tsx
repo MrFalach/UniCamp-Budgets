@@ -177,24 +177,32 @@ export default function InvitePage({ params }: InvitePageProps) {
                   )}
                 </div>
 
-                <form
-                  action={`/invite/${nonce}/start`}
-                  method="POST"
+                <Button
+                  type="button"
+                  disabled={submitting}
+                  onClick={async () => {
+                    setSubmitting(true)
+                    try {
+                      const { consumeInvite } = await import('@/lib/actions/invites')
+                      const actionLink = await consumeInvite(nonce)
+                      if (actionLink) {
+                        window.location.href = actionLink
+                      } else {
+                        setExpired(true)
+                      }
+                    } catch {
+                      setExpired(true)
+                    }
+                  }}
+                  className="w-full h-12 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold shadow-lg shadow-violet-500/20 transition-all duration-300 hover:shadow-violet-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-30 disabled:hover:scale-100 text-[15px]"
                 >
-                  <Button
-                    type="submit"
-                    disabled={submitting}
-                    onClick={() => setSubmitting(true)}
-                    className="w-full h-12 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold shadow-lg shadow-violet-500/20 transition-all duration-300 hover:shadow-violet-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-30 disabled:hover:scale-100 text-[15px]"
-                  >
-                    {submitting ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        רגע, מכין הכל...
-                      </span>
-                    ) : 'יאללה, בוא נגדיר סיסמה! 🚀'}
-                  </Button>
-                </form>
+                  {submitting ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      רגע, מכין הכל...
+                    </span>
+                  ) : 'יאללה, בוא נגדיר סיסמה! 🚀'}
+                </Button>
 
                 <p className="text-[11px] text-violet-200/25">
                   בלחיצה תועבר להגדרת סיסמה למערכת
