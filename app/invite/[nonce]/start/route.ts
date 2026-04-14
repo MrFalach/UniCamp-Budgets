@@ -18,7 +18,7 @@ export async function POST(
     if (!actionLink) {
       return NextResponse.redirect(new URL('/login?reason=auth-error', _request.url))
     }
-    return NextResponse.redirect(actionLink, 307)
+    return NextResponse.redirect(actionLink, 303)
   } catch {
     return NextResponse.redirect(new URL('/login?reason=auth-error', _request.url))
   }
