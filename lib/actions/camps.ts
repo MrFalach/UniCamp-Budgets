@@ -118,7 +118,8 @@ export async function createCamp(formData: FormData) {
   const categoryIds = formData.getAll('category_ids') as string[]
 
   if (!email) {
-    throw new Error(type === 'supplier' ? 'יש להזין אימייל למנהל הספק' : 'יש להזין אימייל למנהל הקמפ')
+    const labels = { supplier: 'ספק', production: 'הפקה', camp: 'קמפ' }
+    throw new Error(`יש להזין אימייל למנהל ה${labels[type] ?? 'קמפ'}`)
   }
 
   // 1. Create the camp/supplier
@@ -154,8 +155,8 @@ export async function createCamp(formData: FormData) {
         category_id: giftingCat.id,
       })
     }
-  } else if (categoryIds.length > 0) {
-    // Assign selected categories to supplier
+  } else if ((type === 'supplier' || type === 'production') && categoryIds.length > 0) {
+    // Assign selected categories to supplier or production
     await supabase.from('camp_categories').insert(
       categoryIds.map((catId) => ({ camp_id: camp.id, category_id: catId }))
     )
@@ -210,8 +211,8 @@ export async function createCamp(formData: FormData) {
     inviteUrl = await createInvite(email, camp.id)
   }
 
-  const entityType = type === 'supplier' ? 'supplier' : 'camp'
-  await logAction(user.id, `${entityType}_created`, entityType, camp.id, undefined, { name, total_budget: totalBudget, email })
+  const logEntityType = type === 'supplier' ? 'supplier' : type === 'production' ? 'production' : 'camp'
+  await logAction(user.id, `${logEntityType}_created`, logEntityType, camp.id, undefined, { name, total_budget: totalBudget, email })
 
   revalidatePath('/admin')
   return { camp, inviteUrl }
@@ -389,6 +390,27 @@ export async function getUserCampCategories(userId: string): Promise<ExpenseCate
   if (!membership) return []
 
   return getCampCategories(membership.camp_id)
+}
+
+/**
+ * Get category IDs exclusively assigned to productions (for preventing double-assignment).
+ */
+export async function getTakenProductionCategoryIds(): Promise<string[]> {
+  const supabase = await createClient()
+  const { data: productions } = await supabase
+    .from('camps')
+    .select('id')
+    .eq('type', 'production')
+
+  if (!productions || productions.length === 0) return []
+
+  const productionIds = productions.map((p) => p.id)
+  const { data: assignments } = await supabase
+    .from('camp_categories')
+    .select('category_id')
+    .in('camp_id', productionIds)
+
+  return assignments?.map((a) => a.category_id) ?? []
 }
 
 export async function getUserCampType(userId: string): Promise<CampType | null> {

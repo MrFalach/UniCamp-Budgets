@@ -7,7 +7,7 @@ import { StatusBadge } from '@/components/StatusBadge'
 import { WelcomeOverlay } from '@/components/WelcomeOverlay'
 import { ExpenseRulesButton } from '@/components/ExpenseRulesDialog'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { getUserCamp, getCampWithBudget } from '@/lib/actions/camps'
+import { getUserCamp, getCampWithBudget, getCampCategories } from '@/lib/actions/camps'
 import { getAppSettings } from '@/lib/actions/settings'
 import Link from 'next/link'
 
@@ -34,6 +34,28 @@ export default async function CampDashboard() {
 
   const budget = await getCampWithBudget(camp.id)
   const seasonClosed = settings.season_status === 'closed'
+
+  // Per-category breakdown for productions
+  let categoryBreakdown: { id: string; name: string; color: string | null; budget_cap: number; approved: number; pending: number }[] = []
+  if (camp.type === 'production') {
+    const campCategories = await getCampCategories(camp.id)
+    const { data: catExpenses } = await supabase
+      .from('expenses')
+      .select('category_id, amount, status')
+      .eq('camp_id', camp.id)
+
+    categoryBreakdown = campCategories.map((cat) => {
+      const catExp = catExpenses?.filter((e) => e.category_id === cat.id) ?? []
+      return {
+        id: cat.id,
+        name: cat.name,
+        color: cat.color,
+        budget_cap: cat.budget_cap ?? 0,
+        approved: catExp.filter((e) => e.status === 'approved').reduce((s, e) => s + Number(e.amount), 0),
+        pending: catExp.filter((e) => e.status === 'pending').reduce((s, e) => s + Number(e.amount), 0),
+      }
+    })
+  }
 
   const { data: recentExpenses } = await supabase
     .from('expenses')
@@ -108,6 +130,43 @@ export default async function CampDashboard() {
         used={budget.total_approved}
         threshold={settings.budget_warning_threshold}
       />
+
+      {/* Per-category breakdown for productions */}
+      {camp.type === 'production' && categoryBreakdown.length > 0 && (
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">פירוט לפי קטגוריה</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {categoryBreakdown.map((cat) => {
+                const remaining = cat.budget_cap - cat.approved
+                return (
+                  <div key={cat.id} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color ?? '#6B7280' }} />
+                        <span className="font-medium">{cat.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono">
+                        <span>אושר: {formatCurrency(cat.approved)}</span>
+                        {cat.pending > 0 && <span className="text-amber-600">ממתין: {formatCurrency(cat.pending)}</span>}
+                        <span>נותר: {formatCurrency(remaining)}</span>
+                      </div>
+                    </div>
+                    <BudgetProgressBar
+                      total={cat.budget_cap}
+                      used={cat.approved}
+                      threshold={settings.budget_warning_threshold}
+                      showLabels={false}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent expenses */}
       <Card className="shadow-sm">

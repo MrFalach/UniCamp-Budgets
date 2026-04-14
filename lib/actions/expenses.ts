@@ -22,7 +22,10 @@ export async function submitExpense(formData: FormData) {
   const receiptUrl = formData.get('receipt_url') as string | null
   const receiptType = formData.get('receipt_type') as string | null
 
-  // Auto-assign category: camps → "גיפטינג", suppliers → their assigned category
+  // Auto-assign category based on type:
+  // camps → always "גיפטינג"
+  // suppliers → their first assigned category (if not specified)
+  // productions → category_id comes from the form dropdown (required)
   const { data: camp } = await supabase.from('camps').select('type, name').eq('id', campId).single()
   if (camp?.type === 'camp') {
     const { data: giftingCat } = await supabase
@@ -40,6 +43,7 @@ export async function submitExpense(formData: FormData) {
       .single()
     if (assignedCat) categoryId = assignedCat.category_id
   }
+  // production: categoryId comes from formData (user selects from dropdown)
 
   const { data: expense, error } = await supabase
     .from('expenses')
