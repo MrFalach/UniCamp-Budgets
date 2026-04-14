@@ -310,6 +310,7 @@ export function AdminCampsClient({
       </Card>
 
       <CampFormDialog
+        key={editCamp?.id ?? 'new'}
         camp={editCamp}
         campEmail={editCamp ? campEmails[editCamp.id] : null}
         open={formOpen}
