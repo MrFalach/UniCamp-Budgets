@@ -73,35 +73,28 @@ export async function consumeInvite(nonce: string): Promise<string> {
   if (new Date(invite.expires_at) < new Date()) throw new Error('ההזמנה פגה תוקף')
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  const redirectTo = `${siteUrl}/auth/callback?next=/set-password`
 
-  // Check if user exists in auth — if not, create via invite
-  const { data: existingUsers } = await adminClient.auth.admin.listUsers()
-  const userExists = existingUsers?.users?.some(u => u.email === invite.email)
-
+  // Try recovery first (user already exists from camp creation).
+  // Fall back to invite if user doesn't exist yet.
   let actionLink: string
 
-  if (userExists) {
-    // Existing user → recovery link
-    const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
-      type: 'recovery',
-      email: invite.email,
-      options: {
-        redirectTo: `${siteUrl}/auth/callback?next=/set-password`,
-      },
-    })
-    if (linkError) throw new Error(linkError.message)
-    actionLink = linkData.properties?.action_link ?? ''
+  const { data: recoveryData, error: recoveryError } = await adminClient.auth.admin.generateLink({
+    type: 'recovery',
+    email: invite.email,
+    options: { redirectTo },
+  })
+
+  if (!recoveryError && recoveryData?.properties?.action_link) {
+    actionLink = recoveryData.properties.action_link
   } else {
-    // New user → invite link (also creates the auth user)
-    const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
+    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.generateLink({
       type: 'invite',
       email: invite.email,
-      options: {
-        redirectTo: `${siteUrl}/auth/callback?next=/set-password`,
-      },
+      options: { redirectTo },
     })
-    if (linkError) throw new Error(linkError.message)
-    actionLink = linkData.properties?.action_link ?? ''
+    if (inviteError) throw new Error(inviteError.message)
+    actionLink = inviteData.properties?.action_link ?? ''
   }
 
   // Mark consumed
