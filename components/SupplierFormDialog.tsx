@@ -205,24 +205,27 @@ export function SupplierFormDialog({
             <Textarea id="description" name="description" defaultValue={supplier?.description ?? ''} rows={2} />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="bank_account_name">שם בעל החשבון</Label>
-              <Input id="bank_account_name" name="bank_account_name" defaultValue={supplier?.bank_account_name ?? ''} />
+          {/* Bank details — only shown when editing */}
+          {isEdit && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="bank_account_name">שם בעל החשבון</Label>
+                <Input id="bank_account_name" name="bank_account_name" defaultValue={supplier?.bank_account_name ?? ''} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bank_account_number">מספר חשבון</Label>
+                <Input id="bank_account_number" name="bank_account_number" defaultValue={supplier?.bank_account_number ?? ''} dir="ltr" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bank_name">שם הבנק</Label>
+                <Input id="bank_name" name="bank_name" defaultValue={supplier?.bank_name ?? ''} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bank_branch">סניף</Label>
+                <Input id="bank_branch" name="bank_branch" defaultValue={supplier?.bank_branch ?? ''} dir="ltr" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="bank_account_number">מספר חשבון</Label>
-              <Input id="bank_account_number" name="bank_account_number" defaultValue={supplier?.bank_account_number ?? ''} dir="ltr" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bank_name">שם הבנק</Label>
-              <Input id="bank_name" name="bank_name" defaultValue={supplier?.bank_name ?? ''} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bank_branch">סניף</Label>
-              <Input id="bank_branch" name="bank_branch" defaultValue={supplier?.bank_branch ?? ''} dir="ltr" />
-            </div>
-          </div>
+          )}
 
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="outline" onClick={handleClose}>
