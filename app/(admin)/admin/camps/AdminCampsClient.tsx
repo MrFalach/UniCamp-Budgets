@@ -127,7 +127,7 @@ export function AdminCampsClient({
                 {camp.type === 'production' && (
                   <div className="flex flex-wrap gap-1">
                     {getCategoryNames(camp.id).map((cat) => (
-                      <span key={cat.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-muted/50 text-muted-foreground">
+                      <span key={cat.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-muted/50 text-muted-foreground">
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color ?? '#6B7280' }} />
                         {cat.name}
                         {cat.budget_cap != null && cat.budget_cap > 0 && (
@@ -139,15 +139,15 @@ export function AdminCampsClient({
                 )}
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="bg-muted/50 rounded-lg p-2">
-                    <p className="text-[10px] text-muted-foreground">תקציב</p>
+                    <p className="text-[11px] text-muted-foreground">תקציב</p>
                     <p className="font-mono text-sm font-medium">{formatCurrency(camp.total_budget)}</p>
                   </div>
                   <div className="bg-emerald-50 rounded-lg p-2">
-                    <p className="text-[10px] text-muted-foreground">מאושר</p>
+                    <p className="text-[11px] text-muted-foreground">מאושר</p>
                     <p className="font-mono text-sm font-medium text-emerald-600">{formatCurrency(total_approved)}</p>
                   </div>
                   <div className="bg-muted/50 rounded-lg p-2">
-                    <p className="text-[10px] text-muted-foreground">נותר</p>
+                    <p className="text-[11px] text-muted-foreground">נותר</p>
                     <p className="font-mono text-sm font-medium">{formatCurrency(remaining)}</p>
                   </div>
                 </div>

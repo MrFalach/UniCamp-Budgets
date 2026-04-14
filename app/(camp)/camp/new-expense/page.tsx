@@ -103,6 +103,7 @@ export default function NewExpensePage() {
               id="amount"
               name="amount"
               type="number"
+              inputMode="decimal"
               min={0}
               step={0.01}
               required
@@ -135,7 +136,7 @@ export default function NewExpensePage() {
               <select
                 name="category_id"
                 required
-                className="w-full h-10 px-3 rounded-xl border bg-background text-sm"
+                className="w-full h-11 px-3 rounded-xl border bg-background text-sm appearance-none"
                 defaultValue=""
               >
                 <option value="" disabled>בחר קטגוריה...</option>
