@@ -113,7 +113,7 @@ export function AdminSuppliersClient({ supplierBudgets, supplierEmails, threshol
                       className="text-xs text-primary hover:text-primary flex-1"
                       onClick={async () => {
                         try {
-                          const url = await resendInvite(supplierEmails[supplier.id]!)
+                          const url = await resendInvite(supplierEmails[supplier.id]!, supplier.id)
                           if (url) {
                             await navigator.clipboard.writeText(url)
                             toast.success('לינק הזמנה הועתק!', { description: 'שלח אותו למנהל הספק' })
@@ -202,7 +202,7 @@ export function AdminSuppliersClient({ supplierBudgets, supplierEmails, threshol
                             className="text-xs text-primary hover:text-primary"
                             onClick={async () => {
                               try {
-                                const url = await resendInvite(supplierEmails[supplier.id]!)
+                                const url = await resendInvite(supplierEmails[supplier.id]!, supplier.id)
                                 if (url) {
                                   await navigator.clipboard.writeText(url)
                                   toast.success('לינק הזמנה הועתק!', { description: 'שלח אותו למנהל הספק' })

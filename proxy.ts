@@ -33,7 +33,7 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Allow public routes
-  if (pathname === '/login' || pathname === '/set-password' || pathname.startsWith('/auth/')) {
+  if (pathname === '/login' || pathname === '/set-password' || pathname.startsWith('/auth/') || pathname.startsWith('/invite/')) {
     return supabaseResponse
   }
 

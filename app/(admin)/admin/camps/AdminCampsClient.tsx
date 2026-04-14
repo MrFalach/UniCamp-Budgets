@@ -100,7 +100,7 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
                       className="text-xs text-primary hover:text-primary flex-1"
                       onClick={async () => {
                         try {
-                          const url = await resendInvite(campEmails[camp.id]!)
+                          const url = await resendInvite(campEmails[camp.id]!, camp.id)
                           if (url) {
                             await navigator.clipboard.writeText(url)
                             toast.success('לינק הזמנה הועתק!', { description: 'שלח אותו למנהל הקמפ' })
@@ -189,7 +189,7 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
                             className="text-xs text-primary hover:text-primary"
                             onClick={async () => {
                               try {
-                                const url = await resendInvite(campEmails[camp.id]!)
+                                const url = await resendInvite(campEmails[camp.id]!, camp.id)
                                 if (url) {
                                   await navigator.clipboard.writeText(url)
                                   toast.success('לינק הזמנה הועתק!', { description: 'שלח אותו למנהל הקמפ' })
