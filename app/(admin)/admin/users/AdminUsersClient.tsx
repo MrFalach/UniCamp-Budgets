@@ -15,7 +15,7 @@ import {
 import { EmptyState } from '@/components/EmptyState'
 import { UserInviteDialog } from '@/components/UserInviteDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { updateUser } from '@/lib/actions/users'
+import { updateUser, deleteUser } from '@/lib/actions/users'
 import { toast } from 'sonner'
 
 interface UserWithCamps {
@@ -37,7 +37,7 @@ interface Props {
 
 export function AdminUsersClient({ users }: Props) {
   const [inviteOpen, setInviteOpen] = useState(false)
-  const [deactivateTarget, setDeactivateTarget] = useState<UserWithCamps | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<UserWithCamps | null>(null)
   const [roleChangeTarget, setRoleChangeTarget] = useState<{ user: UserWithCamps; newRole: string } | null>(null)
 
   async function handleRoleChange() {
@@ -51,14 +51,14 @@ export function AdminUsersClient({ users }: Props) {
     }
   }
 
-  async function handleDeactivate() {
-    if (!deactivateTarget) return
+  async function handleDelete() {
+    if (!deleteTarget) return
     try {
-      await updateUser(deactivateTarget.id, { is_active: false })
-      toast.success('המשתמש הושבת')
-      setDeactivateTarget(null)
-    } catch {
-      toast.error('שגיאה בהשבתת משתמש')
+      await deleteUser(deleteTarget.id)
+      toast.success('המשתמש נמחק')
+      setDeleteTarget(null)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'שגיאה במחיקת משתמש')
     }
   }
 
@@ -144,8 +144,8 @@ export function AdminUsersClient({ users }: Props) {
                     </div>
                   </div>
                   {user.is_active ? (
-                    <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => setDeactivateTarget(user)}>
-                      השבת
+                    <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => setDeleteTarget(user)}>
+                      מחק
                     </Button>
                   ) : (
                     <Button variant="ghost" size="sm" className="text-emerald-600 text-xs" onClick={() => handleActivate(user.id)}>
@@ -229,9 +229,9 @@ export function AdminUsersClient({ users }: Props) {
                           variant="ghost"
                           size="sm"
                           className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => setDeactivateTarget(user)}
+                          onClick={() => setDeleteTarget(user)}
                         >
-                          השבת
+                          מחק
                         </Button>
                       ) : (
                         <Button
@@ -255,12 +255,12 @@ export function AdminUsersClient({ users }: Props) {
       <UserInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
 
       <ConfirmDialog
-        open={!!deactivateTarget}
-        onOpenChange={(open) => !open && setDeactivateTarget(null)}
-        title="השבתת משתמש"
-        description={`האם להשבית את "${deactivateTarget?.full_name ?? deactivateTarget?.email}"? המשתמש לא יוכל להתחבר.`}
-        onConfirm={handleDeactivate}
-        confirmLabel="השבת"
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="מחיקת משתמש"
+        description={`האם למחוק את "${deleteTarget?.full_name ?? deleteTarget?.email}"? הפעולה בלתי הפיכה.`}
+        onConfirm={handleDelete}
+        confirmLabel="מחק"
         variant="destructive"
       />
 
