@@ -20,60 +20,123 @@ import { deleteCamp } from '@/lib/actions/camps'
 import { resendInvite } from '@/lib/actions/users'
 import { formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
-import type { Camp, CampBudgetSummary } from '@/lib/types'
+import type { Camp, CampBudgetSummary, ExpenseCategory } from '@/lib/types'
 
 interface Props {
   campBudgets: CampBudgetSummary[]
+  productionBudgets: CampBudgetSummary[]
   campEmails: Record<string, string | null>
   threshold: number
+  allCategories: ExpenseCategory[]
+  takenProductionCategoryIds: string[]
+  productionCategoryMap: Record<string, string[]>
+  giftingBudgetCap: number
+  totalCampBudgets: number
 }
 
-export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) {
+export function AdminCampsClient({
+  campBudgets,
+  productionBudgets,
+  campEmails,
+  threshold,
+  allCategories,
+  takenProductionCategoryIds,
+  productionCategoryMap,
+  giftingBudgetCap,
+  totalCampBudgets,
+}: Props) {
   const [formOpen, setFormOpen] = useState(false)
   const [editCamp, setEditCamp] = useState<Camp | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Camp | null>(null)
+
+  // Productions first, then camps
+  const allBudgets = [...productionBudgets, ...campBudgets]
 
   async function handleDelete() {
     if (!deleteTarget) return
     try {
       await deleteCamp(deleteTarget.id)
-      toast.success('הקמפ נמחק')
+      toast.success(deleteTarget.type === 'production' ? 'ההפקה נמחקה' : 'הקמפ נמחק')
       setDeleteTarget(null)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'שגיאה במחיקת הקמפ')
+      toast.error(err instanceof Error ? err.message : 'שגיאה במחיקה')
     }
   }
+
+  function getLabel(camp: Camp) {
+    return camp.type === 'production' ? 'הפקה' : 'קמפ'
+  }
+
+  function getCategoryNames(campId: string) {
+    const catIds = productionCategoryMap[campId] ?? []
+    return catIds.map((id) => allCategories.find((c) => c.id === id)).filter(Boolean) as ExpenseCategory[]
+  }
+
+  const giftingOverBudget = giftingBudgetCap > 0 && totalCampBudgets > giftingBudgetCap
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">קמפים</h2>
-          <p className="text-sm text-muted-foreground mt-1">ניהול קמפים ותקציבים</p>
+          <h2 className="text-2xl font-bold tracking-tight">הפקות וקמפים</h2>
+          <p className="text-sm text-muted-foreground mt-1">ניהול הפקות, קמפים ותקציבים</p>
         </div>
-        <Button onClick={() => { setEditCamp(null); setFormOpen(true) }}>+ קמפ חדש</Button>
+        <Button onClick={() => { setEditCamp(null); setFormOpen(true) }}>+ חדש</Button>
       </div>
+
+      {/* Gifting budget warning */}
+      {giftingOverBudget && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-start gap-2">
+          <span className="shrink-0">⚠️</span>
+          <span>
+            סה&quot;כ תקציבי קמפים ({formatCurrency(totalCampBudgets)}) חורג מתקציב גיפטינג ({formatCurrency(giftingBudgetCap)}).
+            כדאי להגדיל את תקציב קטגוריית גיפטינג בהגדרות.
+          </span>
+        </div>
+      )}
 
       {/* Mobile card view */}
       <div className="md:hidden space-y-3 stagger-cards">
-        {campBudgets.length === 0 ? (
-          <EmptyState icon="camps" title="אין קמפים עדיין" description="צור קמפ חדש כדי להתחיל" />
+        {allBudgets.length === 0 ? (
+          <EmptyState icon="camps" title="אין הפקות או קמפים עדיין" description="צור הפקה או קמפ חדש כדי להתחיל" />
         ) : (
-          campBudgets.map(({ camp, total_approved, remaining, usage_percent }) => (
+          allBudgets.map(({ camp, total_approved, remaining, usage_percent }) => (
             <Card key={camp.id} className="shadow-sm">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-base">{camp.name}</span>
-                  <Badge
-                    variant="outline"
-                    className={camp.is_active
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : 'bg-gray-50 text-gray-500 border-gray-200'
-                    }
-                  >
-                    {camp.is_active ? 'פעיל' : 'לא פעיל'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{camp.type === 'production' ? '🎬' : '🏕️'}</span>
+                    <span className="font-semibold text-base">{camp.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="outline" className={camp.type === 'production' ? 'bg-violet-50 text-violet-700 border-violet-200' : 'bg-blue-50 text-blue-700 border-blue-200'}>
+                      {getLabel(camp)}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={camp.is_active
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : 'bg-gray-50 text-gray-500 border-gray-200'
+                      }
+                    >
+                      {camp.is_active ? 'פעיל' : 'לא פעיל'}
+                    </Badge>
+                  </div>
                 </div>
+                {/* Category breakdown for productions */}
+                {camp.type === 'production' && (
+                  <div className="flex flex-wrap gap-1">
+                    {getCategoryNames(camp.id).map((cat) => (
+                      <span key={cat.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-muted/50 text-muted-foreground">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color ?? '#6B7280' }} />
+                        {cat.name}
+                        {cat.budget_cap != null && cat.budget_cap > 0 && (
+                          <span className="font-mono">{formatCurrency(cat.budget_cap)}</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="bg-muted/50 rounded-lg p-2">
                     <p className="text-[10px] text-muted-foreground">תקציב</p>
@@ -103,7 +166,7 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
                           const url = await resendInvite(campEmails[camp.id]!, camp.id)
                           if (url) {
                             await navigator.clipboard.writeText(url)
-                            toast.success('לינק הזמנה הועתק!', { description: 'שלח אותו למנהל הקמפ' })
+                            toast.success('לינק הזמנה הועתק!')
                           }
                         } catch {
                           toast.error('שגיאה ביצירת לינק הזמנה')
@@ -132,6 +195,7 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead>סוג</TableHead>
                 <TableHead>שם</TableHead>
                 <TableHead>משתמש</TableHead>
                 <TableHead>תקציב</TableHead>
@@ -143,17 +207,34 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {campBudgets.length === 0 ? (
+              {allBudgets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8}>
-                    <EmptyState icon="camps" title="אין קמפים עדיין" description="צור קמפ חדש כדי להתחיל" />
+                  <TableCell colSpan={9}>
+                    <EmptyState icon="camps" title="אין הפקות או קמפים עדיין" description="צור הפקה או קמפ חדש כדי להתחיל" />
                   </TableCell>
                 </TableRow>
               ) : (
-                campBudgets.map(({ camp, total_approved, remaining, usage_percent }) => (
+                allBudgets.map(({ camp, total_approved, remaining, usage_percent }) => (
                   <TableRow key={camp.id}>
                     <TableCell>
-                      <span className="font-semibold">{camp.name}</span>
+                      <Badge variant="outline" className={camp.type === 'production' ? 'bg-violet-50 text-violet-700 border-violet-200' : 'bg-blue-50 text-blue-700 border-blue-200'}>
+                        {camp.type === 'production' ? '🎬 הפקה' : '🏕️ קמפ'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <span className="font-semibold">{camp.name}</span>
+                        {camp.type === 'production' && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {getCategoryNames(camp.id).map((cat) => (
+                              <span key={cat.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] bg-muted/50 text-muted-foreground">
+                                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cat.color ?? '#6B7280' }} />
+                                {cat.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <span dir="ltr" className="text-sm text-muted-foreground">
@@ -192,7 +273,7 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
                                 const url = await resendInvite(campEmails[camp.id]!, camp.id)
                                 if (url) {
                                   await navigator.clipboard.writeText(url)
-                                  toast.success('לינק הזמנה הועתק!', { description: 'שלח אותו למנהל הקמפ' })
+                                  toast.success('לינק הזמנה הועתק!')
                                 }
                               } catch {
                                 toast.error('שגיאה ביצירת לינק הזמנה')
@@ -233,13 +314,16 @@ export function AdminCampsClient({ campBudgets, campEmails, threshold }: Props) 
         campEmail={editCamp ? campEmails[editCamp.id] : null}
         open={formOpen}
         onOpenChange={setFormOpen}
+        allCategories={allCategories}
+        takenProductionCategoryIds={takenProductionCategoryIds}
+        assignedCategoryIds={editCamp ? (productionCategoryMap[editCamp.id] ?? []) : []}
       />
 
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="מחיקת קמפ"
-        description={`האם אתה בטוח שברצונך למחוק את "${deleteTarget?.name}"? לא ניתן למחוק קמפ שיש לו הוצאות.`}
+        title={deleteTarget?.type === 'production' ? 'מחיקת הפקה' : 'מחיקת קמפ'}
+        description={`האם אתה בטוח שברצונך למחוק את "${deleteTarget?.name}"? לא ניתן למחוק ${deleteTarget?.type === 'production' ? 'הפקה' : 'קמפ'} שיש לו הוצאות.`}
         onConfirm={handleDelete}
         confirmLabel="מחק"
         variant="destructive"

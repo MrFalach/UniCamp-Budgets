@@ -9,7 +9,7 @@ import { markWelcomeSeen } from '@/lib/actions/users'
 interface WelcomeOverlayProps {
   campName: string
   totalBudget: number
-  campType: 'camp' | 'supplier'
+  campType: 'camp' | 'supplier' | 'production'
 }
 
 const EXPENSE_RULES = [

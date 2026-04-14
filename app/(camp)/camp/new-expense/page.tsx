@@ -122,7 +122,7 @@ export default function NewExpensePage() {
             />
           </div>
 
-          {/* Locked category display */}
+          {/* Category: camps → locked Gifting, productions → dropdown, suppliers → locked first */}
           <div className="space-y-2">
             <Label>קטגוריה</Label>
             {campType === 'camp' ? (
@@ -131,6 +131,18 @@ export default function NewExpensePage() {
                 <span className="text-sm font-medium">גיפטינג</span>
                 <span className="text-[10px] text-muted-foreground mr-auto">🔒 נעול</span>
               </div>
+            ) : campType === 'production' && categories.length > 0 ? (
+              <select
+                name="category_id"
+                required
+                className="w-full h-10 px-3 rounded-xl border bg-background text-sm"
+                defaultValue=""
+              >
+                <option value="" disabled>בחר קטגוריה...</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
             ) : categories.length > 0 ? (
               <>
                 <input type="hidden" name="category_id" value={categories[0].id} />

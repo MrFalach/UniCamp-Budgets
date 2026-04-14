@@ -4,7 +4,7 @@ export type ExpenseStatus = 'pending' | 'approved' | 'rejected'
 export type ReceiptType = 'image' | 'pdf'
 export type ReimbursementStatus = 'pending' | 'paid'
 export type PaymentMethod = 'bank_transfer' | 'bit' | 'cash' | 'other'
-export type CampType = 'camp' | 'supplier'
+export type CampType = 'camp' | 'supplier' | 'production'
 
 export interface AppSettings {
   id: number
