@@ -77,22 +77,9 @@ export async function getCurrentUser() {
   return profile
 }
 
-export async function resendInvite(email: string): Promise<string> {
-  const adminClient = createAdminClient()
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-
-  // Generate a new recovery link (no email sent)
-  const { data, error } = await adminClient.auth.admin.generateLink({
-    type: 'recovery',
-    email,
-    options: {
-      redirectTo: `${siteUrl}/auth/callback?next=/set-password`,
-    },
-  })
-
-  if (error) throw new Error(error.message)
-
-  return data.properties?.action_link ?? ''
+export async function resendInvite(email: string, campId?: string): Promise<string> {
+  const { createInvite } = await import('@/lib/actions/invites')
+  return createInvite(email, campId)
 }
 
 export async function signOut() {

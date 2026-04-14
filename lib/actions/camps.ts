@@ -178,7 +178,7 @@ export async function createCamp(formData: FormData) {
     // Ensure role is 'camp'
     await supabase.from('profiles').update({ role: 'camp' }).eq('id', campUserId)
   } else {
-    // Create user and generate invite link (no email sent — admin shares the link manually)
+    // Create user via Supabase invite (no email sent — we share a preview-safe link)
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
     const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
       type: 'invite',
@@ -193,8 +193,6 @@ export async function createCamp(formData: FormData) {
     // Wait briefly for the trigger to create the profile, then set role
     await new Promise((r) => setTimeout(r, 500))
     await adminClient.from('profiles').update({ role: 'camp' }).eq('id', campUserId)
-
-    inviteUrl = linkData.properties?.action_link ?? null
   }
 
   // 4. Assign user to camp/supplier
@@ -204,6 +202,12 @@ export async function createCamp(formData: FormData) {
 
   if (memberError && memberError.code !== '23505') {
     throw new Error(memberError.message)
+  }
+
+  // 5. Create a preview-safe invite link for the user
+  if (!existingProfile) {
+    const { createInvite } = await import('@/lib/actions/invites')
+    inviteUrl = await createInvite(email, camp.id)
   }
 
   const entityType = type === 'supplier' ? 'supplier' : 'camp'

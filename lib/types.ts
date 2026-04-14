@@ -128,6 +128,15 @@ export interface CampBudgetSummary {
   usage_percent: number
 }
 
+export interface Invite {
+  nonce: string
+  email: string
+  camp_id: string | null
+  created_at: string
+  expires_at: string
+  consumed_at: string | null
+}
+
 export interface ExpenseFilters {
   search?: string
   campIds?: string[]
