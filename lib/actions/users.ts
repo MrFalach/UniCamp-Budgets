@@ -82,6 +82,26 @@ export async function resendInvite(email: string, campId?: string): Promise<stri
   return createInvite(email, campId)
 }
 
+export async function deleteUser(userId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+  if (user.id === userId) throw new Error('לא ניתן למחוק את עצמך')
+
+  const adminClient = createAdminClient()
+
+  // Get profile info for audit log
+  const { data: profile } = await supabase.from('profiles').select('email').eq('id', userId).single()
+
+  // Delete from Supabase Auth (cascades to profiles via FK)
+  const { error } = await adminClient.auth.admin.deleteUser(userId)
+  if (error) throw new Error(error.message)
+
+  await logAction(user.id, 'user_deleted', 'profile', userId, { email: profile?.email }, undefined)
+
+  revalidatePath('/admin/users')
+}
+
 export async function signOut() {
   const supabase = await createClient()
   await supabase.auth.signOut()
