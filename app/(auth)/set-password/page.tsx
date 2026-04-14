@@ -268,6 +268,8 @@ export default function SetPasswordPage() {
                         </div>
                       )}
                     </div>
+                    {/* Invisible spacer matching the confirm row's ✅/❌ indicator */}
+                    <span className="shrink-0 w-5" aria-hidden="true" />
                     {/* Always rendered to reserve space — fades in once user starts typing */}
                     <button
                       type="button"
