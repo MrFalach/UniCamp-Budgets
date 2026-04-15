@@ -26,13 +26,15 @@ export default async function AdminDashboard() {
   const totalBudget = campBudgets.reduce((s, c) => s + Number(c.camp.total_budget), 0)
   const totalApproved = campBudgets.reduce((s, c) => s + c.total_approved, 0)
   const totalPending = campBudgets.reduce((s, c) => s + c.total_pending, 0)
-  const totalRemaining = totalBudget - totalApproved
+  const totalShitimAdvance = campBudgets.reduce((s, c) => s + (c.shitim_advance ?? 0), 0)
+  const totalUtilized = totalApproved + totalShitimAdvance
+  const totalRemaining = totalBudget - totalUtilized
 
   const greeting = profile?.full_name ? `שלום, ${profile.full_name}` : 'דשבורד ניהול'
 
   const metrics = [
     { label: 'סה״כ תקציב', rawValue: totalBudget, color: 'bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800 shadow-blue', textColor: 'text-blue-700 dark:text-blue-400' },
-    { label: 'הוצאות מאושרות', rawValue: totalApproved, color: 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800 shadow-emerald', textColor: 'text-emerald-700 dark:text-emerald-400' },
+    { label: 'נוצל מהתקציב', rawValue: totalUtilized, color: 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800 shadow-emerald', textColor: 'text-emerald-700 dark:text-emerald-400' },
     { label: 'יתרה כוללת', rawValue: totalRemaining, color: 'bg-violet-50 border-violet-200 dark:bg-violet-950/30 dark:border-violet-800 shadow-violet', textColor: 'text-violet-700 dark:text-violet-400' },
     { label: 'ממתינות לאישור', rawValue: totalPending, color: 'bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 shadow-amber', textColor: 'text-amber-700 dark:text-amber-400' },
   ]
@@ -89,29 +91,35 @@ export default async function AdminDashboard() {
               {campBudgets.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">אין קמפים עדיין</p>
               ) : (
-                campBudgets.map(({ camp, total_approved }) => (
-                  <div key={camp.id} className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <Link href={camp.type === 'supplier' ? '/admin/suppliers' : `/admin/camps`} className="font-semibold hover:text-primary transition-colors">
-                          {camp.name}
-                        </Link>
-                        {camp.type === 'supplier' && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-violet-50 text-violet-600 border-violet-200">ספק</Badge>
-                        )}
+                campBudgets.map(({ camp, total_approved, shitim_advance }) => {
+                  const utilized = total_approved + (shitim_advance ?? 0)
+                  return (
+                    <div key={camp.id} className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <Link href={camp.type === 'supplier' ? '/admin/suppliers' : `/admin/camps`} className="font-semibold hover:text-primary transition-colors">
+                            {camp.name}
+                          </Link>
+                          {camp.type === 'supplier' && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-violet-50 text-violet-600 border-violet-200">ספק</Badge>
+                          )}
+                          {shitim_advance > 0 && (
+                            <span title={`מקדמה שיטים: ₪${shitim_advance.toLocaleString('he-IL')}`} className="text-sky-500">🛟</span>
+                          )}
+                        </div>
+                        <span className="text-muted-foreground font-mono text-xs">
+                          ₪{utilized.toLocaleString('he-IL')} / ₪{camp.total_budget.toLocaleString('he-IL')}
+                        </span>
                       </div>
-                      <span className="text-muted-foreground font-mono text-xs">
-                        ₪{total_approved.toLocaleString('he-IL')} / ₪{camp.total_budget.toLocaleString('he-IL')}
-                      </span>
+                      <BudgetProgressBar
+                        total={camp.total_budget}
+                        used={utilized}
+                        threshold={settings.budget_warning_threshold}
+                        showLabels={false}
+                      />
                     </div>
-                    <BudgetProgressBar
-                      total={camp.total_budget}
-                      used={total_approved}
-                      threshold={settings.budget_warning_threshold}
-                      showLabels={false}
-                    />
-                  </div>
-                ))
+                  )
+                })
               )}
             </CardContent>
           </Card>

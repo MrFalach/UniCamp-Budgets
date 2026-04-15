@@ -232,6 +232,26 @@ export function CampFormDialog({
             )}
           </div>
 
+          {/* Shitim advance — camps only */}
+          {entityType === 'camp' && (
+            <div className="space-y-2">
+              <Label htmlFor="shitim_advance">מקדמה שיטים (₪)</Label>
+              <Input
+                id="shitim_advance"
+                name="shitim_advance"
+                type="number"
+                min={0}
+                step="0.01"
+                defaultValue={camp?.shitim_advance != null ? String(camp.shitim_advance) : '0'}
+                dir="ltr"
+                placeholder="0"
+              />
+              <p className="text-xs text-muted-foreground">
+                הסכום ששולם ע&quot;י הקמפ כמקדמה לשיטים — ייחשב כמנוצל מהתקציב ויוחזר בסגירת העונה.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="email">אימייל מנהל ה{entityLabel} *</Label>
             <Input

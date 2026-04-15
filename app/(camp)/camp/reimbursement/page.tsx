@@ -18,6 +18,8 @@ export default async function CampReimbursementPage() {
   }
 
   const reimbursement = await getCampReimbursement(camp.id)
+  const shitimAdvance = Number(camp.shitim_advance ?? 0)
+  const approvedPortion = reimbursement ? Number(reimbursement.total_amount) - shitimAdvance : 0
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -41,6 +43,20 @@ export default async function CampReimbursementPage() {
             <div className="text-3xl font-bold font-mono text-center py-4">
               {formatCurrency(reimbursement.total_amount)}
             </div>
+
+            {shitimAdvance > 0 && (
+              <div className="rounded-lg border p-3 text-sm space-y-1.5 bg-muted/30">
+                <p className="text-xs text-muted-foreground font-medium">פירוט ההחזר</p>
+                <div className="flex justify-between">
+                  <span>הוצאות מאושרות</span>
+                  <span className="font-mono">{formatCurrency(approvedPortion)}</span>
+                </div>
+                <div className="flex justify-between text-sky-700 dark:text-sky-300">
+                  <span className="inline-flex items-center gap-1">🛟 מקדמה שיטים</span>
+                  <span className="font-mono">{formatCurrency(shitimAdvance)}</span>
+                </div>
+              </div>
+            )}
 
             {reimbursement.status === 'paid' && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">

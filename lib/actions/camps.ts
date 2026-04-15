@@ -62,13 +62,16 @@ export async function getCampWithBudget(campId: string) {
 
   const approved = expenses?.filter((e) => e.status === 'approved').reduce((s, e) => s + Number(e.amount), 0) ?? 0
   const pending = expenses?.filter((e) => e.status === 'pending').reduce((s, e) => s + Number(e.amount), 0) ?? 0
+  const shitimAdvance = Number(camp.shitim_advance ?? 0)
+  const utilized = approved + shitimAdvance
 
   return {
     ...camp,
     total_approved: approved,
     total_pending: pending,
-    remaining: camp.total_budget - approved,
-    usage_percent: camp.total_budget > 0 ? (approved / camp.total_budget) * 100 : 0,
+    shitim_advance: shitimAdvance,
+    remaining: camp.total_budget - utilized,
+    usage_percent: camp.total_budget > 0 ? (utilized / camp.total_budget) * 100 : 0,
   }
 }
 
@@ -89,14 +92,17 @@ export async function getAllCampsWithBudgets(type?: CampType) {
     const approved = campExpenses.filter((e) => e.status === 'approved').reduce((s, e) => s + Number(e.amount), 0)
     const pending = campExpenses.filter((e) => e.status === 'pending').reduce((s, e) => s + Number(e.amount), 0)
     const rejected = campExpenses.filter((e) => e.status === 'rejected').reduce((s, e) => s + Number(e.amount), 0)
+    const shitimAdvance = Number(camp.shitim_advance ?? 0)
+    const utilized = approved + shitimAdvance
 
     return {
       camp,
       total_approved: approved,
       total_pending: pending,
       total_rejected: rejected,
-      remaining: camp.total_budget - approved,
-      usage_percent: camp.total_budget > 0 ? (approved / camp.total_budget) * 100 : 0,
+      shitim_advance: shitimAdvance,
+      remaining: camp.total_budget - utilized,
+      usage_percent: camp.total_budget > 0 ? (utilized / camp.total_budget) * 100 : 0,
     }
   })
 }
@@ -108,6 +114,7 @@ export async function createCamp(formData: FormData) {
 
   const name = formData.get('name') as string
   const totalBudget = Number(formData.get('total_budget'))
+  const shitimAdvance = Number(formData.get('shitim_advance') ?? 0)
   const email = (formData.get('email') as string)?.trim()
   const description = formData.get('description') as string | null
   const bankAccountName = formData.get('bank_account_name') as string | null
@@ -129,6 +136,7 @@ export async function createCamp(formData: FormData) {
       name,
       type,
       total_budget: totalBudget,
+      shitim_advance: type === 'camp' ? shitimAdvance : 0,
       description: description || null,
       bank_account_name: bankAccountName || null,
       bank_account_number: bankAccountNumber || null,
@@ -227,28 +235,36 @@ export async function updateCamp(campId: string, formData: FormData) {
 
   const name = formData.get('name') as string
   const totalBudget = Number(formData.get('total_budget'))
+  const hasShitimAdvance = formData.has('shitim_advance')
+  const shitimAdvance = Number(formData.get('shitim_advance') ?? 0)
   const description = formData.get('description') as string | null
   const bankAccountName = formData.get('bank_account_name') as string | null
   const bankAccountNumber = formData.get('bank_account_number') as string | null
   const bankName = formData.get('bank_name') as string | null
   const bankBranch = formData.get('bank_branch') as string | null
 
+  const updates: Record<string, unknown> = {
+    name,
+    total_budget: totalBudget,
+    description: description || null,
+    bank_account_name: bankAccountName || null,
+    bank_account_number: bankAccountNumber || null,
+    bank_name: bankName || null,
+    bank_branch: bankBranch || null,
+  }
+  // Only camps carry a shitim advance; keep field untouched for suppliers/productions.
+  if (hasShitimAdvance && old?.type === 'camp') {
+    updates.shitim_advance = shitimAdvance
+  }
+
   const { error } = await supabase
     .from('camps')
-    .update({
-      name,
-      total_budget: totalBudget,
-      description: description || null,
-      bank_account_name: bankAccountName || null,
-      bank_account_number: bankAccountNumber || null,
-      bank_name: bankName || null,
-      bank_branch: bankBranch || null,
-    })
+    .update(updates)
     .eq('id', campId)
 
   if (error) throw new Error(error.message)
 
-  await logAction(user.id, 'camp_updated', 'camp', campId, old as Record<string, unknown>, { name, total_budget: totalBudget })
+  await logAction(user.id, 'camp_updated', 'camp', campId, old as Record<string, unknown>, { name, total_budget: totalBudget, shitim_advance: updates.shitim_advance })
 
   revalidatePath('/admin')
 }

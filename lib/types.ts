@@ -29,6 +29,7 @@ export interface Camp {
   name: string
   type: CampType
   total_budget: number
+  shitim_advance: number
   description: string | null
   is_active: boolean
   bank_account_name: string | null
@@ -124,6 +125,8 @@ export interface CampBudgetSummary {
   total_approved: number
   total_pending: number
   total_rejected: number
+  /** Per-camp pre-paid shitim advance — counts as already-used budget */
+  shitim_advance: number
   remaining: number
   usage_percent: number
 }
