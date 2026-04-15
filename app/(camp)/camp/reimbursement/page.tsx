@@ -19,7 +19,8 @@ export default async function CampReimbursementPage() {
 
   const reimbursement = await getCampReimbursement(camp.id)
   const shitimAdvance = Number(camp.shitim_advance ?? 0)
-  const approvedPortion = reimbursement ? Number(reimbursement.total_amount) - shitimAdvance : 0
+  const isVirtual = reimbursement ? String(reimbursement.id).startsWith('virtual-shitim-') : false
+  const approvedPortion = reimbursement && !isVirtual ? Number(reimbursement.total_amount) - shitimAdvance : 0
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -35,7 +36,7 @@ export default async function CampReimbursementPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>סיכום החזר — {camp.name}</span>
+              <span>{isVirtual ? 'מקדמה שיטים — ממתין להחזר' : `סיכום החזר — ${camp.name}`}</span>
               <StatusBadge status={reimbursement.status} />
             </CardTitle>
           </CardHeader>
@@ -44,7 +45,16 @@ export default async function CampReimbursementPage() {
               {formatCurrency(reimbursement.total_amount)}
             </div>
 
-            {shitimAdvance > 0 && (
+            {isVirtual && (
+              <div className="rounded-lg border border-sky-200 bg-sky-50 dark:bg-sky-950/20 dark:border-sky-800 p-3 text-sm text-sky-900 dark:text-sky-200">
+                <p className="font-medium mb-1">🛟 מקדמה ששולמה על ידי הקמפ</p>
+                <p className="text-xs text-sky-800/80 dark:text-sky-300/80">
+                  סכום זה נרשם כהוצאה מאושרת ויוחזר אליכם יחד עם שאר ההוצאות בסגירת העונה.
+                </p>
+              </div>
+            )}
+
+            {!isVirtual && shitimAdvance > 0 && (
               <div className="rounded-lg border p-3 text-sm space-y-1.5 bg-muted/30">
                 <p className="text-xs text-muted-foreground font-medium">פירוט ההחזר</p>
                 <div className="flex justify-between">
@@ -82,7 +92,7 @@ export default async function CampReimbursementPage() {
               </div>
             )}
 
-            {reimbursement.status === 'pending' && (
+            {reimbursement.status === 'pending' && !isVirtual && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
                 ממתין לתשלום. וודא שפרטי הבנק שלך מעודכנים.
               </div>

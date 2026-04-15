@@ -33,6 +33,8 @@ export function ReimbursementsClient({ reimbursements, seasonStatus }: Props) {
   const [editTarget, setEditTarget] = useState<Reimbursement | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const isVirtual = (r: Reimbursement) => r.id.startsWith('virtual-shitim-')
+
   const totalAmount = reimbursements.reduce((s, r) => s + Number(r.total_amount), 0)
   const paidAmount = reimbursements.filter((r) => r.status === 'paid').reduce((s, r) => s + Number(r.total_amount), 0)
   const remainingAmount = totalAmount - paidAmount
@@ -124,11 +126,19 @@ export function ReimbursementsClient({ reimbursements, seasonStatus }: Props) {
           <div className="md:hidden space-y-3">
             {reimbursements.map((r) => {
               const camp = r.camp as Record<string, unknown> | undefined
+              const virtual = isVirtual(r)
               return (
-                <Card key={r.id} className="shadow-sm">
+                <Card key={r.id} className={`shadow-sm ${virtual ? 'border-sky-200 bg-sky-50/40 dark:bg-sky-950/20 dark:border-sky-800' : ''}`}>
                   <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">{(camp?.name as string) ?? '—'}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-semibold truncate">{(camp?.name as string) ?? '—'}</span>
+                        {virtual && (
+                          <Badge variant="outline" className="text-[10px] shrink-0 bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800">
+                            🛟 מקדמה שיטים
+                          </Badge>
+                        )}
+                      </div>
                       <StatusBadge status={r.status} />
                     </div>
                     <div className="flex items-center justify-between">
@@ -141,8 +151,10 @@ export function ReimbursementsClient({ reimbursements, seasonStatus }: Props) {
                       </p>
                     ) : null}
                     <div className="flex items-center justify-between pt-2 border-t">
-                      <span className="text-xs text-muted-foreground">{getPaymentMethodLabel(r.payment_method)}</span>
-                      {r.status === 'pending' ? (
+                      <span className="text-xs text-muted-foreground">
+                        {virtual ? 'ייפרע בסגירת העונה' : getPaymentMethodLabel(r.payment_method)}
+                      </span>
+                      {virtual ? null : r.status === 'pending' ? (
                         <Button size="sm" onClick={() => setPayTarget(r)}>סמן כשולם</Button>
                       ) : (
                         <Button variant="ghost" size="sm" onClick={() => setEditTarget(r)}>ערוך</Button>
@@ -173,9 +185,19 @@ export function ReimbursementsClient({ reimbursements, seasonStatus }: Props) {
                 <TableBody>
                   {reimbursements.map((r) => {
                     const camp = r.camp as Record<string, unknown> | undefined
+                    const virtual = isVirtual(r)
                     return (
-                      <TableRow key={r.id}>
-                        <TableCell className="font-medium">{(camp?.name as string) ?? '—'}</TableCell>
+                      <TableRow key={r.id} className={virtual ? 'bg-sky-50/40 dark:bg-sky-950/10' : ''}>
+                        <TableCell className="font-medium">
+                          <span className="inline-flex items-center gap-2">
+                            {(camp?.name as string) ?? '—'}
+                            {virtual && (
+                              <Badge variant="outline" className="text-[10px] bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800">
+                                🛟 מקדמה שיטים
+                              </Badge>
+                            )}
+                          </span>
+                        </TableCell>
                         <TableCell className="font-mono">{formatCurrency(r.total_amount)}</TableCell>
                         <TableCell className="text-sm">
                           {camp?.bank_account_name ? (
@@ -189,11 +211,15 @@ export function ReimbursementsClient({ reimbursements, seasonStatus }: Props) {
                         <TableCell>
                           <StatusBadge status={r.status} />
                         </TableCell>
-                        <TableCell className="text-sm">{getPaymentMethodLabel(r.payment_method)}</TableCell>
+                        <TableCell className="text-sm">
+                          {virtual ? <span className="text-muted-foreground">ייפרע בסגירת העונה</span> : getPaymentMethodLabel(r.payment_method)}
+                        </TableCell>
                         <TableCell dir="ltr" className="text-sm">{r.payment_reference ?? '—'}</TableCell>
                         <TableCell className="text-sm">{r.paid_at ? formatDate(r.paid_at) : '—'}</TableCell>
                         <TableCell>
-                          {r.status === 'pending' ? (
+                          {virtual ? (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          ) : r.status === 'pending' ? (
                             <Button size="sm" onClick={() => setPayTarget(r)}>סמן כשולם</Button>
                           ) : (
                             <Button variant="ghost" size="sm" onClick={() => setEditTarget(r)}>ערוך</Button>

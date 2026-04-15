@@ -207,13 +207,15 @@ export function AnalyticsClient({ campBudgets, categories, expenses }: Props) {
             </TableHeader>
             <TableBody>
               {sortedBudgets.map(({ camp, total_approved, remaining, usage_percent, shitim_advance }) => {
-                const utilized = total_approved + (shitim_advance ?? 0)
+                // Budget utilization = approved expenses only. Shitim advance sits alongside
+                // the budget (reimbursable out-of-pocket spend) and is shown as its own column.
+                const utilized = total_approved
                 return (
                   <TableRow key={camp.id}>
                     <TableCell className="font-medium">
                       <span className="inline-flex items-center gap-1">
                         {camp.name}
-                        {shitim_advance > 0 && <span title={`מקדמה שיטים: ${formatCurrency(shitim_advance)}`} className="text-sky-500">🛟</span>}
+                        {shitim_advance > 0 && <span title={`מקדמה שיטים להחזר: ${formatCurrency(shitim_advance)}`} className="text-sky-500">🛟</span>}
                       </span>
                     </TableCell>
                     <TableCell className="font-mono">{formatCurrency(camp.total_budget)}</TableCell>
@@ -243,7 +245,7 @@ export function AnalyticsClient({ campBudgets, categories, expenses }: Props) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {sortedBudgets.map(({ camp, total_approved, usage_percent, shitim_advance }, index) => (
+              {sortedBudgets.map(({ camp, total_approved, usage_percent }, index) => (
                 <div key={camp.id} className="space-y-1.5">
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
@@ -251,7 +253,7 @@ export function AnalyticsClient({ campBudgets, categories, expenses }: Props) {
                       <span className="font-medium">{camp.name}</span>
                     </div>
                     <div className="flex items-center gap-4 text-xs font-mono">
-                      <span className="text-emerald-600">{formatCurrency(total_approved + (shitim_advance ?? 0))}</span>
+                      <span className="text-emerald-600">{formatCurrency(total_approved)}</span>
                       <span className="text-muted-foreground">/ {formatCurrency(camp.total_budget)}</span>
                     </div>
                   </div>

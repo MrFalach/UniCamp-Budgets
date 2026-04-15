@@ -26,8 +26,8 @@ export default async function AdminDashboard() {
   const totalBudget = campBudgets.reduce((s, c) => s + Number(c.camp.total_budget), 0)
   const totalApproved = campBudgets.reduce((s, c) => s + c.total_approved, 0)
   const totalPending = campBudgets.reduce((s, c) => s + c.total_pending, 0)
-  const totalShitimAdvance = campBudgets.reduce((s, c) => s + (c.shitim_advance ?? 0), 0)
-  const totalUtilized = totalApproved + totalShitimAdvance
+  // Shitim advances are reimbursable out-of-pocket spend by camps — NOT budget utilization.
+  const totalUtilized = totalApproved
   const totalRemaining = totalBudget - totalUtilized
 
   const greeting = profile?.full_name ? `שלום, ${profile.full_name}` : 'דשבורד ניהול'
@@ -92,7 +92,7 @@ export default async function AdminDashboard() {
                 <p className="text-center text-muted-foreground py-8">אין קמפים עדיין</p>
               ) : (
                 campBudgets.map(({ camp, total_approved, shitim_advance }) => {
-                  const utilized = total_approved + (shitim_advance ?? 0)
+                  const utilized = total_approved
                   return (
                     <div key={camp.id} className="space-y-2">
                       <div className="flex justify-between text-sm">
@@ -104,7 +104,7 @@ export default async function AdminDashboard() {
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-violet-50 text-violet-600 border-violet-200">ספק</Badge>
                           )}
                           {shitim_advance > 0 && (
-                            <span title={`מקדמה שיטים: ₪${shitim_advance.toLocaleString('he-IL')}`} className="text-sky-500">🛟</span>
+                            <span title={`מקדמה שיטים להחזר: ₪${shitim_advance.toLocaleString('he-IL')}`} className="text-sky-500">🛟</span>
                           )}
                         </div>
                         <span className="text-muted-foreground font-mono text-xs">

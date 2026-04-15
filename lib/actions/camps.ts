@@ -63,7 +63,10 @@ export async function getCampWithBudget(campId: string) {
   const approved = expenses?.filter((e) => e.status === 'approved').reduce((s, e) => s + Number(e.amount), 0) ?? 0
   const pending = expenses?.filter((e) => e.status === 'pending').reduce((s, e) => s + Number(e.amount), 0) ?? 0
   const shitimAdvance = Number(camp.shitim_advance ?? 0)
-  const utilized = approved + shitimAdvance
+  // Shitim advance is money the camp paid out-of-pocket to the event. It is NOT
+  // counted against the camp's gifting budget — it's an already-approved reimbursable
+  // expense that sits alongside the budget, not inside it.
+  const utilized = approved
 
   return {
     ...camp,
@@ -93,7 +96,9 @@ export async function getAllCampsWithBudgets(type?: CampType) {
     const pending = campExpenses.filter((e) => e.status === 'pending').reduce((s, e) => s + Number(e.amount), 0)
     const rejected = campExpenses.filter((e) => e.status === 'rejected').reduce((s, e) => s + Number(e.amount), 0)
     const shitimAdvance = Number(camp.shitim_advance ?? 0)
-    const utilized = approved + shitimAdvance
+    // Shitim advance sits alongside the budget (it's money the camp paid out-of-pocket
+    // and will be reimbursed) — it does not reduce the gifting budget.
+    const utilized = approved
 
     return {
       camp,

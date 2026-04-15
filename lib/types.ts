@@ -125,7 +125,8 @@ export interface CampBudgetSummary {
   total_approved: number
   total_pending: number
   total_rejected: number
-  /** Per-camp pre-paid shitim advance — counts as already-used budget */
+  /** Per-camp pre-paid shitim advance — money paid out-of-pocket by the camp,
+   *  reimbursed at season close. Does NOT count against the gifting budget. */
   shitim_advance: number
   remaining: number
   usage_percent: number
