@@ -41,7 +41,7 @@ export async function closeSeason() {
   if (settingsError) throw new Error(settingsError.message)
 
   // Get all camps with approved expense totals
-  const { data: camps } = await supabase.from('camps').select('id, name').eq('is_active', true)
+  const { data: camps } = await supabase.from('camps').select('id, name, shitim_advance').eq('is_active', true)
   if (!camps) return
 
   for (const camp of camps) {
@@ -51,7 +51,9 @@ export async function closeSeason() {
       .eq('camp_id', camp.id)
       .eq('status', 'approved')
 
-    const total = expenses?.reduce((s, e) => s + Number(e.amount), 0) ?? 0
+    const approved = expenses?.reduce((s, e) => s + Number(e.amount), 0) ?? 0
+    // Advance was paid out-of-pocket by the camp, so it's reimbursed alongside approved expenses.
+    const total = approved + Number(camp.shitim_advance ?? 0)
 
     if (total > 0) {
       // Check if reimbursement already exists

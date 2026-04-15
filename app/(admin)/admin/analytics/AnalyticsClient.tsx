@@ -46,18 +46,25 @@ interface Props {
 }
 
 export function AnalyticsClient({ campBudgets, categories, expenses }: Props) {
+  // Total shitim advance across all camps — treated as already-spent on the "מקדמה לשיטים" category
+  const totalShitimAdvance = useMemo(
+    () => campBudgets.reduce((s, c) => s + (c.shitim_advance ?? 0), 0),
+    [campBudgets]
+  )
+
   // Bar chart: expenses per camp
   const campChartData = useMemo(() =>
-    campBudgets.map(({ camp, total_approved, total_pending, total_rejected }) => ({
+    campBudgets.map(({ camp, total_approved, total_pending, total_rejected, shitim_advance }) => ({
       name: camp.name,
       אושר: total_approved,
+      'מקדמה שיטים': shitim_advance ?? 0,
       ממתין: total_pending,
       נדחה: total_rejected,
     })),
     [campBudgets]
   )
 
-  // Pie chart: by category
+  // Pie chart: by category (shitim advance counts as spend under "מקדמה לשיטים")
   const categoryData = useMemo(() => {
     const map = new Map<string, number>()
     expenses
@@ -66,8 +73,11 @@ export function AnalyticsClient({ campBudgets, categories, expenses }: Props) {
         const catName = categories.find((c) => c.id === e.category_id)?.name ?? 'אחר'
         map.set(catName, (map.get(catName) ?? 0) + Number(e.amount))
       })
+    if (totalShitimAdvance > 0) {
+      map.set('מקדמה לשיטים', (map.get('מקדמה לשיטים') ?? 0) + totalShitimAdvance)
+    }
     return Array.from(map.entries()).map(([name, value]) => ({ name, value }))
-  }, [expenses, categories])
+  }, [expenses, categories, totalShitimAdvance])
 
   // Line chart: cumulative by week
   const weeklyData = useMemo(() => {
@@ -94,18 +104,19 @@ export function AnalyticsClient({ campBudgets, categories, expenses }: Props) {
   // Budget utilization sorted by % desc
   const sortedBudgets = [...campBudgets].sort((a, b) => b.usage_percent - a.usage_percent)
 
-  // Category overspend
+  // Category overspend — shitim advance counts as spend on its own category
   const categoryOverspend = useMemo(() => {
     return categories
       .filter((c) => c.budget_cap && c.budget_cap > 0)
       .map((cat) => {
-        const spent = expenses
+        let spent = expenses
           .filter((e) => e.status === 'approved' && e.category_id === cat.id)
           .reduce((s, e) => s + Number(e.amount), 0)
+        if (cat.name === 'מקדמה לשיטים') spent += totalShitimAdvance
         return { ...cat, spent, over: spent > (cat.budget_cap ?? 0) }
       })
       .filter((c) => c.over)
-  }, [categories, expenses])
+  }, [categories, expenses, totalShitimAdvance])
 
   return (
     <div className="space-y-6">
@@ -125,6 +136,7 @@ export function AnalyticsClient({ campBudgets, categories, expenses }: Props) {
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="אושר" stackId="a" fill="#10B981" />
+                <Bar dataKey="מקדמה שיטים" stackId="a" fill="#0EA5E9" />
                 <Bar dataKey="ממתין" stackId="a" fill="#F59E0B" />
                 <Bar dataKey="נדחה" stackId="a" fill="#EF4444" />
               </BarChart>
@@ -194,22 +206,30 @@ export function AnalyticsClient({ campBudgets, categories, expenses }: Props) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedBudgets.map(({ camp, total_approved, remaining, usage_percent }) => (
-                <TableRow key={camp.id}>
-                  <TableCell className="font-medium">{camp.name}</TableCell>
-                  <TableCell className="font-mono">{formatCurrency(camp.total_budget)}</TableCell>
-                  <TableCell className="font-mono">{formatCurrency(total_approved)}</TableCell>
-                  <TableCell className="font-mono">{formatCurrency(remaining)}</TableCell>
-                  <TableCell>{usage_percent.toFixed(0)}%</TableCell>
-                  <TableCell>
-                    <BudgetProgressBar
-                      total={camp.total_budget}
-                      used={total_approved}
-                      showLabels={false}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
+              {sortedBudgets.map(({ camp, total_approved, remaining, usage_percent, shitim_advance }) => {
+                const utilized = total_approved + (shitim_advance ?? 0)
+                return (
+                  <TableRow key={camp.id}>
+                    <TableCell className="font-medium">
+                      <span className="inline-flex items-center gap-1">
+                        {camp.name}
+                        {shitim_advance > 0 && <span title={`מקדמה שיטים: ${formatCurrency(shitim_advance)}`} className="text-sky-500">🛟</span>}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-mono">{formatCurrency(camp.total_budget)}</TableCell>
+                    <TableCell className="font-mono">{formatCurrency(utilized)}</TableCell>
+                    <TableCell className="font-mono">{formatCurrency(remaining)}</TableCell>
+                    <TableCell>{usage_percent.toFixed(0)}%</TableCell>
+                    <TableCell>
+                      <BudgetProgressBar
+                        total={camp.total_budget}
+                        used={utilized}
+                        showLabels={false}
+                      />
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -223,7 +243,7 @@ export function AnalyticsClient({ campBudgets, categories, expenses }: Props) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {sortedBudgets.map(({ camp, total_approved, usage_percent }, index) => (
+              {sortedBudgets.map(({ camp, total_approved, usage_percent, shitim_advance }, index) => (
                 <div key={camp.id} className="space-y-1.5">
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
@@ -231,7 +251,7 @@ export function AnalyticsClient({ campBudgets, categories, expenses }: Props) {
                       <span className="font-medium">{camp.name}</span>
                     </div>
                     <div className="flex items-center gap-4 text-xs font-mono">
-                      <span className="text-emerald-600">{formatCurrency(total_approved)}</span>
+                      <span className="text-emerald-600">{formatCurrency(total_approved + (shitim_advance ?? 0))}</span>
                       <span className="text-muted-foreground">/ {formatCurrency(camp.total_budget)}</span>
                     </div>
                   </div>

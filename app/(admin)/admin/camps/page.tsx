@@ -31,6 +31,11 @@ export default async function AdminCampsPage() {
   const giftingBudgetCap = giftingCategory?.budget_cap ?? 0
   const totalCampBudgets = campBudgets.reduce((sum, { camp }) => sum + camp.total_budget, 0)
 
+  // Shitim advance guardrail: sum across camps vs category cap
+  const shitimCategory = allCategories.find((c) => c.name === 'מקדמה לשיטים')
+  const shitimCategoryCap = shitimCategory?.budget_cap ?? 0
+  const totalShitimAdvances = campBudgets.reduce((sum, { shitim_advance }) => sum + (shitim_advance ?? 0), 0)
+
   return (
     <AdminCampsClient
       campBudgets={campBudgets}
@@ -42,6 +47,8 @@ export default async function AdminCampsPage() {
       productionCategoryMap={productionCategoryMap}
       giftingBudgetCap={giftingBudgetCap}
       totalCampBudgets={totalCampBudgets}
+      shitimCategoryCap={shitimCategoryCap}
+      totalShitimAdvances={totalShitimAdvances}
     />
   )
 }

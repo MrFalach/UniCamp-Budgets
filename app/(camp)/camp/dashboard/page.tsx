@@ -64,6 +64,8 @@ export default async function CampDashboard() {
     .order('submitted_at', { ascending: false })
     .limit(5)
 
+  const utilized = budget.total_approved + (budget.shitim_advance ?? 0)
+
   const metrics = [
     { label: 'תקציב כולל', value: formatCurrency(budget.total_budget), color: 'bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800', textColor: 'text-blue-700 dark:text-blue-400' },
     { label: 'אושר', value: formatCurrency(budget.total_approved), color: 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800', textColor: 'text-emerald-700 dark:text-emerald-400' },
@@ -127,9 +129,31 @@ export default async function CampDashboard() {
 
       <BudgetProgressBar
         total={budget.total_budget}
-        used={budget.total_approved}
+        used={utilized}
         threshold={settings.budget_warning_threshold}
       />
+
+      {/* Shitim advance — shown when camp paid one */}
+      {budget.shitim_advance > 0 && (
+        <Card className="shadow-sm border-sky-200 bg-sky-50/50 dark:bg-sky-950/20 dark:border-sky-800">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl shrink-0">🛟</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="font-semibold text-sky-900 dark:text-sky-200">מקדמה שיטים שולמה</p>
+                  <p className="font-mono font-bold text-lg text-sky-700 dark:text-sky-300">
+                    {formatCurrency(budget.shitim_advance)}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  סכום זה כבר נוצל מהתקציב ויוחזר אליכם בסגירת העונה.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Per-category breakdown for productions */}
       {camp.type === 'production' && categoryBreakdown.length > 0 && (

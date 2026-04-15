@@ -32,6 +32,8 @@ interface Props {
   productionCategoryMap: Record<string, string[]>
   giftingBudgetCap: number
   totalCampBudgets: number
+  shitimCategoryCap: number
+  totalShitimAdvances: number
 }
 
 export function AdminCampsClient({
@@ -44,6 +46,8 @@ export function AdminCampsClient({
   productionCategoryMap,
   giftingBudgetCap,
   totalCampBudgets,
+  shitimCategoryCap,
+  totalShitimAdvances,
 }: Props) {
   const [formOpen, setFormOpen] = useState(false)
   const [editCamp, setEditCamp] = useState<Camp | null>(null)
@@ -74,6 +78,9 @@ export function AdminCampsClient({
 
   const giftingOverBudget = giftingBudgetCap > 0 && totalCampBudgets > giftingBudgetCap
 
+  // Soft guardrail: sum of per-camp shitim advances should match the category's budget cap.
+  const shitimMismatch = shitimCategoryCap > 0 && Math.abs(totalShitimAdvances - shitimCategoryCap) > 0.5
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -95,12 +102,23 @@ export function AdminCampsClient({
         </div>
       )}
 
+      {/* Shitim advance mismatch warning */}
+      {shitimMismatch && (
+        <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 text-sm text-sky-800 flex items-start gap-2">
+          <span className="shrink-0">🛟</span>
+          <span>
+            סכום מקדמות השיטים מכל הקמפים ({formatCurrency(totalShitimAdvances)}) לא תואם את תקציב קטגוריית &quot;מקדמה לשיטים&quot; ({formatCurrency(shitimCategoryCap)}).
+            עדכן את הסכום בפרופיל הקמפים או את תקציב הקטגוריה בהגדרות.
+          </span>
+        </div>
+      )}
+
       {/* Mobile card view */}
       <div className="md:hidden space-y-3 stagger-cards">
         {allBudgets.length === 0 ? (
           <EmptyState icon="camps" title="אין הפקות או קמפים עדיין" description="צור הפקה או קמפ חדש כדי להתחיל" />
         ) : (
-          allBudgets.map(({ camp, total_approved, remaining, usage_percent }) => (
+          allBudgets.map(({ camp, total_approved, remaining, usage_percent, shitim_advance }) => (
             <Card key={camp.id} className="shadow-sm">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
@@ -151,8 +169,18 @@ export function AdminCampsClient({
                     <p className="font-mono text-sm font-medium">{formatCurrency(remaining)}</p>
                   </div>
                 </div>
+                {shitim_advance > 0 && (
+                  <div className="bg-sky-50 dark:bg-sky-950/20 rounded-lg p-2 flex items-center justify-between">
+                    <span className="text-[11px] text-sky-900 dark:text-sky-200 flex items-center gap-1">
+                      🛟 מקדמה שיטים
+                    </span>
+                    <span className="font-mono text-sm font-medium text-sky-700 dark:text-sky-300">
+                      {formatCurrency(shitim_advance)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
-                  <BudgetProgressBar total={camp.total_budget} used={total_approved} threshold={threshold} showLabels={false} />
+                  <BudgetProgressBar total={camp.total_budget} used={total_approved + shitim_advance} threshold={threshold} showLabels={false} />
                   <span className="text-xs text-muted-foreground font-mono w-10">{usage_percent.toFixed(0)}%</span>
                 </div>
                 <div className="flex gap-1 pt-1 border-t">
@@ -200,6 +228,7 @@ export function AdminCampsClient({
                 <TableHead>משתמש</TableHead>
                 <TableHead>תקציב</TableHead>
                 <TableHead>מאושר</TableHead>
+                <TableHead>מקדמה שיטים</TableHead>
                 <TableHead>נותר</TableHead>
                 <TableHead className="w-[180px]">ניצול</TableHead>
                 <TableHead>סטטוס</TableHead>
@@ -209,12 +238,12 @@ export function AdminCampsClient({
             <TableBody>
               {allBudgets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9}>
+                  <TableCell colSpan={10}>
                     <EmptyState icon="camps" title="אין הפקות או קמפים עדיין" description="צור הפקה או קמפ חדש כדי להתחיל" />
                   </TableCell>
                 </TableRow>
               ) : (
-                allBudgets.map(({ camp, total_approved, remaining, usage_percent }) => (
+                allBudgets.map(({ camp, total_approved, remaining, usage_percent, shitim_advance }) => (
                   <TableRow key={camp.id}>
                     <TableCell>
                       <Badge variant="outline" className={camp.type === 'production' ? 'bg-violet-50 text-violet-700 border-violet-200' : 'bg-blue-50 text-blue-700 border-blue-200'}>
@@ -243,10 +272,13 @@ export function AdminCampsClient({
                     </TableCell>
                     <TableCell className="font-mono text-sm">{formatCurrency(camp.total_budget)}</TableCell>
                     <TableCell className="font-mono text-sm text-emerald-600">{formatCurrency(total_approved)}</TableCell>
+                    <TableCell className="font-mono text-sm text-sky-600">
+                      {shitim_advance > 0 ? formatCurrency(shitim_advance) : '—'}
+                    </TableCell>
                     <TableCell className="font-mono text-sm">{formatCurrency(remaining)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <BudgetProgressBar total={camp.total_budget} used={total_approved} threshold={threshold} showLabels={false} />
+                        <BudgetProgressBar total={camp.total_budget} used={total_approved + shitim_advance} threshold={threshold} showLabels={false} />
                         <span className="text-xs text-muted-foreground font-mono w-10">{usage_percent.toFixed(0)}%</span>
                       </div>
                     </TableCell>
