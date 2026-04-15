@@ -5,15 +5,53 @@ import { createClient } from '@/lib/supabase/server'
 import { logAction } from '@/lib/audit'
 import { sendNotification } from '@/lib/email'
 
+/**
+ * Build a virtual pending reimbursement representing a camp's paid shitim advance.
+ * Used before season close to surface the advance as "awaiting reimbursement" —
+ * the real record is created by closeSeason().
+ */
+function buildVirtualShitimReimbursement(camp: Record<string, unknown>) {
+  return {
+    id: `virtual-shitim-${camp.id as string}`,
+    camp_id: camp.id as string,
+    total_amount: Number(camp.shitim_advance ?? 0),
+    status: 'pending' as const,
+    payment_method: null,
+    payment_reference: null,
+    paid_at: null,
+    paid_by: null,
+    notes: null,
+    created_at: (camp.created_at as string) ?? new Date().toISOString(),
+    camp,
+  }
+}
+
 export async function getReimbursements() {
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('reimbursements')
-    .select('*, camp:camps(*)')
-    .order('created_at', { ascending: false })
+  const [reimbursementsResult, campsResult] = await Promise.all([
+    supabase
+      .from('reimbursements')
+      .select('*, camp:camps(*)')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('camps')
+      .select('*')
+      .eq('type', 'camp')
+      .gt('shitim_advance', 0),
+  ])
 
-  if (error) throw new Error(error.message)
-  return data
+  if (reimbursementsResult.error) throw new Error(reimbursementsResult.error.message)
+
+  const reimbursements = reimbursementsResult.data ?? []
+  const campsWithAdvance = campsResult.data ?? []
+
+  // Virtual rows only for camps that don't already have a real reimbursement record.
+  const campIdsWithRecord = new Set(reimbursements.map((r) => r.camp_id))
+  const virtualRows = campsWithAdvance
+    .filter((c) => !campIdsWithRecord.has(c.id))
+    .map((c) => buildVirtualShitimReimbursement(c))
+
+  return [...virtualRows, ...reimbursements]
 }
 
 export async function getCampReimbursement(campId: string) {
@@ -24,7 +62,15 @@ export async function getCampReimbursement(campId: string) {
     .eq('camp_id', campId)
     .single()
 
-  return data
+  if (data) return data
+
+  // Fall back to a virtual pending entry if the camp has a shitim advance on file.
+  const { data: camp } = await supabase.from('camps').select('*').eq('id', campId).single()
+  if (camp && Number(camp.shitim_advance ?? 0) > 0) {
+    return buildVirtualShitimReimbursement(camp)
+  }
+
+  return null
 }
 
 export async function closeSeason() {

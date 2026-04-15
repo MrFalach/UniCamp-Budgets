@@ -64,7 +64,9 @@ export default async function CampDashboard() {
     .order('submitted_at', { ascending: false })
     .limit(5)
 
-  const utilized = budget.total_approved + (budget.shitim_advance ?? 0)
+  // Shitim advance is an out-of-pocket payment by the camp that will be reimbursed —
+  // it does not reduce the gifting budget and is shown separately below.
+  const utilized = budget.total_approved
 
   const metrics = [
     { label: 'תקציב כולל', value: formatCurrency(budget.total_budget), color: 'bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800', textColor: 'text-blue-700 dark:text-blue-400' },
@@ -133,7 +135,8 @@ export default async function CampDashboard() {
         threshold={settings.budget_warning_threshold}
       />
 
-      {/* Shitim advance — shown when camp paid one */}
+      {/* Shitim advance — shown when camp paid one. Money the camp paid out-of-pocket,
+          treated as an already-approved invoice awaiting reimbursement. */}
       {budget.shitim_advance > 0 && (
         <Card className="shadow-sm border-sky-200 bg-sky-50/50 dark:bg-sky-950/20 dark:border-sky-800">
           <CardContent className="pt-5 pb-4">
@@ -141,13 +144,13 @@ export default async function CampDashboard() {
               <span className="text-2xl shrink-0">🛟</span>
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="font-semibold text-sky-900 dark:text-sky-200">מקדמה שיטים שולמה</p>
+                  <p className="font-semibold text-sky-900 dark:text-sky-200">מקדמה שיטים — ממתין להחזר</p>
                   <p className="font-mono font-bold text-lg text-sky-700 dark:text-sky-300">
                     {formatCurrency(budget.shitim_advance)}
                   </p>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  סכום זה כבר נוצל מהתקציב ויוחזר אליכם בסגירת העונה.
+                  סכום ששילמתם ישירות לאירוע כמקדמה לשיטים. אינו מנוצל מתקציב הגיפטינג — ייחשב כהוצאה מאושרת ויוחזר לכם בסגירת העונה.
                 </p>
               </div>
             </div>

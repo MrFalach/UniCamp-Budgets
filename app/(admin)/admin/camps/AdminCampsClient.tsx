@@ -180,7 +180,7 @@ export function AdminCampsClient({
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <BudgetProgressBar total={camp.total_budget} used={total_approved + shitim_advance} threshold={threshold} showLabels={false} />
+                  <BudgetProgressBar total={camp.total_budget} used={total_approved} threshold={threshold} showLabels={false} />
                   <span className="text-xs text-muted-foreground font-mono w-10">{usage_percent.toFixed(0)}%</span>
                 </div>
                 <div className="flex gap-1 pt-1 border-t">
@@ -278,7 +278,7 @@ export function AdminCampsClient({
                     <TableCell className="font-mono text-sm">{formatCurrency(remaining)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <BudgetProgressBar total={camp.total_budget} used={total_approved + shitim_advance} threshold={threshold} showLabels={false} />
+                        <BudgetProgressBar total={camp.total_budget} used={total_approved} threshold={threshold} showLabels={false} />
                         <span className="text-xs text-muted-foreground font-mono w-10">{usage_percent.toFixed(0)}%</span>
                       </div>
                     </TableCell>
