@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { addCampMember, removeCampMember } from '@/lib/actions/camps'
+import { EditEmailDialog } from '@/components/EditEmailDialog'
 import { toast } from 'sonner'
 import type { Camp } from '@/lib/types'
 
@@ -29,6 +30,7 @@ interface Props {
 
 export function CampDetailClient({ camp, members, allUsers }: Props) {
   const [selectedUser, setSelectedUser] = useState('')
+  const [emailEditTarget, setEmailEditTarget] = useState<Member | null>(null)
 
   const memberUserIds = new Set(members.map((m) => m.user_id))
   const availableUsers = allUsers.filter((u) => !memberUserIds.has(u.id))
@@ -93,7 +95,16 @@ export function CampDetailClient({ camp, members, allUsers }: Props) {
                 <div key={member.id} className="flex items-center justify-between py-2 border-b last:border-0">
                   <div>
                     <p className="font-medium">{member.user?.full_name || member.user?.email || 'ללא שם'}</p>
-                    <p className="text-sm text-muted-foreground">{member.user?.email}</p>
+                    <div className="flex items-center gap-2">
+                      <p dir="ltr" className="text-sm text-muted-foreground">{member.user?.email}</p>
+                      <button
+                        type="button"
+                        onClick={() => setEmailEditTarget(member)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        ערוך
+                      </button>
+                    </div>
                   </div>
                   <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleRemove(member.user_id)}>
                     הסר
@@ -104,6 +115,14 @@ export function CampDetailClient({ camp, members, allUsers }: Props) {
           )}
         </CardContent>
       </Card>
+
+      <EditEmailDialog
+        open={!!emailEditTarget}
+        onOpenChange={(open) => !open && setEmailEditTarget(null)}
+        userId={emailEditTarget?.user?.id ?? null}
+        currentEmail={emailEditTarget?.user?.email ?? null}
+        displayName={emailEditTarget?.user?.full_name ?? emailEditTarget?.user?.email ?? null}
+      />
     </div>
   )
 }
