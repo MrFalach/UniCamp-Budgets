@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table'
 import { EmptyState } from '@/components/EmptyState'
 import { UserInviteDialog } from '@/components/UserInviteDialog'
+import { EditEmailDialog } from '@/components/EditEmailDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { updateUser, deleteUser } from '@/lib/actions/users'
 import { toast } from 'sonner'
@@ -38,6 +39,7 @@ interface Props {
 export function AdminUsersClient({ users }: Props) {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<UserWithCamps | null>(null)
+  const [emailEditTarget, setEmailEditTarget] = useState<UserWithCamps | null>(null)
   const [roleChangeTarget, setRoleChangeTarget] = useState<{ user: UserWithCamps; newRole: string } | null>(null)
 
   async function handleRoleChange() {
@@ -108,7 +110,16 @@ export function AdminUsersClient({ users }: Props) {
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <p className="font-medium">{user.full_name || user.email || '—'}</p>
-                    <p dir="ltr" className="text-sm text-muted-foreground">{user.email}</p>
+                    <div className="flex items-center gap-2">
+                      <p dir="ltr" className="text-sm text-muted-foreground">{user.email}</p>
+                      <button
+                        type="button"
+                        onClick={() => setEmailEditTarget(user)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        ערוך
+                      </button>
+                    </div>
                   </div>
                   {user.is_active ? (
                     <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
@@ -184,7 +195,18 @@ export function AdminUsersClient({ users }: Props) {
                 users.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.full_name || user.email || '—'}</TableCell>
-                    <TableCell dir="ltr" className="text-sm text-muted-foreground">{user.email}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <span dir="ltr">{user.email}</span>
+                        <button
+                          type="button"
+                          onClick={() => setEmailEditTarget(user)}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          ערוך
+                        </button>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <select
                         value={user.role}
@@ -253,6 +275,14 @@ export function AdminUsersClient({ users }: Props) {
       </Card>
 
       <UserInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
+
+      <EditEmailDialog
+        open={!!emailEditTarget}
+        onOpenChange={(open) => !open && setEmailEditTarget(null)}
+        userId={emailEditTarget?.id ?? null}
+        currentEmail={emailEditTarget?.email ?? null}
+        displayName={emailEditTarget?.full_name ?? emailEditTarget?.email ?? null}
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}

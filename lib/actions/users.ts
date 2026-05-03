@@ -63,6 +63,43 @@ export async function updateUser(userId: string, updates: {
   revalidatePath('/admin/users')
 }
 
+export async function updateUserEmail(userId: string, newEmail: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const email = newEmail.trim().toLowerCase()
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error('כתובת אימייל לא תקינה')
+  }
+
+  const { data: caller } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (caller?.role !== 'admin') throw new Error('Forbidden')
+
+  const { data: old } = await supabase.from('profiles').select('*').eq('id', userId).single()
+  if (!old) throw new Error('משתמש לא נמצא')
+  if ((old as { email?: string }).email === email) return
+
+  const adminClient = createAdminClient()
+
+  const { error: authError } = await adminClient.auth.admin.updateUserById(userId, {
+    email,
+    email_confirm: true,
+  })
+  if (authError) throw new Error(authError.message)
+
+  const { error: profileError } = await adminClient
+    .from('profiles')
+    .update({ email })
+    .eq('id', userId)
+  if (profileError) throw new Error(profileError.message)
+
+  await logAction(user.id, 'user_email_changed', 'profile', userId, { email: (old as { email?: string }).email }, { email })
+
+  revalidatePath('/admin/users')
+  revalidatePath('/admin/camps')
+}
+
 export async function getCurrentUser() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
