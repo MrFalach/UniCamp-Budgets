@@ -1,10 +1,11 @@
 'use server'
 
+import { cache } from 'react'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { logAction } from '@/lib/audit'
 
-export async function getAppSettings() {
+export const getAppSettings = cache(async () => {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('app_settings')
@@ -14,7 +15,7 @@ export async function getAppSettings() {
 
   if (error) throw new Error(error.message)
   return data
-}
+})
 
 export async function updateAppSettings(formData: FormData) {
   const supabase = await createClient()
@@ -48,7 +49,7 @@ export async function updateAppSettings(formData: FormData) {
   revalidatePath('/')
 }
 
-export async function getExpenseCategories() {
+export const getExpenseCategories = cache(async () => {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('expense_categories')
@@ -57,7 +58,7 @@ export async function getExpenseCategories() {
 
   if (error) throw new Error(error.message)
   return data
-}
+})
 
 export async function createCategory(formData: FormData) {
   const supabase = await createClient()
@@ -123,7 +124,7 @@ export async function getAuditLogs(filters?: {
 
   let query = supabase
     .from('audit_logs')
-    .select('*, actor:profiles(id, full_name, email)', { count: 'exact' })
+    .select('id, action, entity_type, entity_id, created_at, actor:profiles(full_name)', { count: 'exact' })
     .order('created_at', { ascending: false })
 
   if (filters?.actorId) query = query.eq('actor_id', filters.actorId)
@@ -136,5 +137,5 @@ export async function getAuditLogs(filters?: {
   const { data, count, error } = await query
   if (error) throw new Error(error.message)
 
-  return { logs: data ?? [], total: count ?? 0 }
+  return { logs: (data ?? []) as unknown as import('@/lib/types').AuditLog[], total: count ?? 0 }
 }

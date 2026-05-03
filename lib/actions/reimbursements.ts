@@ -90,31 +90,36 @@ export async function closeSeason() {
   const { data: camps } = await supabase.from('camps').select('id, name, shitim_advance').eq('is_active', true)
   if (!camps) return
 
-  for (const camp of camps) {
-    const { data: expenses } = await supabase
+  const campIds = camps.map((c) => c.id)
+  const [{ data: approvedExpenses }, { data: existingReimbursements }] = await Promise.all([
+    supabase
       .from('expenses')
-      .select('amount')
-      .eq('camp_id', camp.id)
-      .eq('status', 'approved')
+      .select('camp_id, amount')
+      .in('camp_id', campIds)
+      .eq('status', 'approved'),
+    supabase
+      .from('reimbursements')
+      .select('camp_id')
+      .in('camp_id', campIds),
+  ])
 
-    const approved = expenses?.reduce((s, e) => s + Number(e.amount), 0) ?? 0
-    // Advance was paid out-of-pocket by the camp, so it's reimbursed alongside approved expenses.
-    const total = approved + Number(camp.shitim_advance ?? 0)
+  const approvedByCamp = new Map<string, number>()
+  for (const e of approvedExpenses ?? []) {
+    approvedByCamp.set(e.camp_id, (approvedByCamp.get(e.camp_id) ?? 0) + Number(e.amount))
+  }
+  const existingCampIds = new Set((existingReimbursements ?? []).map((r) => r.camp_id))
 
-    if (total > 0) {
-      // Check if reimbursement already exists
-      const { data: existing } = await supabase
-        .from('reimbursements')
-        .select('id')
-        .eq('camp_id', camp.id)
-        .single()
+  const inserts = camps
+    .filter((camp) => !existingCampIds.has(camp.id))
+    .map((camp) => {
+      const approved = approvedByCamp.get(camp.id) ?? 0
+      const total = approved + Number(camp.shitim_advance ?? 0)
+      return total > 0 ? { camp_id: camp.id, total_amount: total } : null
+    })
+    .filter((row): row is { camp_id: string; total_amount: number } => row !== null)
 
-      if (!existing) {
-        await supabase
-          .from('reimbursements')
-          .insert({ camp_id: camp.id, total_amount: total })
-      }
-    }
+  if (inserts.length > 0) {
+    await supabase.from('reimbursements').insert(inserts)
   }
 
   await logAction(user.id, 'season_closed', 'app_settings', undefined)

@@ -20,11 +20,13 @@ export default async function AdminCampsPage() {
   }
 
   // Build category assignments per production (for display + editing)
-  const productionCategoryMap: Record<string, string[]> = {}
-  for (const { camp } of productionBudgets) {
-    const cats = await getCampCategories(camp.id)
-    productionCategoryMap[camp.id] = cats.map((c) => c.id)
-  }
+  const productionCategoryEntries = await Promise.all(
+    productionBudgets.map(async ({ camp }) => {
+      const cats = await getCampCategories(camp.id)
+      return [camp.id, cats.map((c) => c.id)] as const
+    })
+  )
+  const productionCategoryMap: Record<string, string[]> = Object.fromEntries(productionCategoryEntries)
 
   // Gifting budget cap for warning
   const giftingCategory = allCategories.find((c) => c.name === 'גיפטינג')

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
-import { CreditLine } from '@/components/CreditLine'
+import { CreditLine } from '@/components/CreditLineLazy'
 
 const FLOATING_EMOJIS = ['🔥', '⭐', '🎪', '✨', '🌈', '🎵', '💫', '🦋', '🌸', '🎨', '🪩', '🎭']
 

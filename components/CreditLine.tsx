@@ -1,6 +1,26 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
+
+function subscribeMediaQuery(query: string, callback: () => void) {
+    const mq = window.matchMedia(query);
+    mq.addEventListener('change', callback);
+    return () => mq.removeEventListener('change', callback);
+}
+
+function useShouldAnimate() {
+    return useSyncExternalStore(
+        (callback) => {
+            const a = subscribeMediaQuery('(prefers-reduced-motion: reduce)', callback);
+            const b = subscribeMediaQuery('(max-width: 768px)', callback);
+            return () => { a(); b(); };
+        },
+        () =>
+            !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+            !window.matchMedia('(max-width: 768px)').matches,
+        () => false,
+    );
+}
 
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&*';
 const HEART_COLORS = [
@@ -278,8 +298,11 @@ const WalkingHeart = ({ color, onDone }: { color: string; onDone: () => void }) 
 
 /** Credit line that decodes character by character, with color-shifting heart and rotating name effects */
 export const CreditLine = () => {
-    const [displayText, setDisplayText] = useState('');
-    const [decoded, setDecoded] = useState(false);
+    // Skip all timers if user prefers reduced motion or viewport is small
+    // (parent footer is hidden md:flex anyway).
+    const animationsEnabled = useShouldAnimate();
+    const [displayText, setDisplayText] = useState(TARGET_TEXT);
+    const [decoded, setDecoded] = useState(true);
     const [heartColor, setHeartColor] = useState(HEART_COLORS[0]);
     const [effectIndex, setEffectIndex] = useState(0);
     const [effectActive, setEffectActive] = useState(false);
@@ -288,6 +311,7 @@ export const CreditLine = () => {
 
     // Decode loop
     useEffect(() => {
+        if (!animationsEnabled) return;
         function runDecode() {
             setDecoded(false);
             let resolvedCount = 0;
@@ -323,20 +347,22 @@ export const CreditLine = () => {
             clearInterval(loopInterval);
             if (intervalRef.current) clearInterval(intervalRef.current);
         };
-    }, []);
+    }, [animationsEnabled]);
 
     // Heart color cycle
     useEffect(() => {
+        if (!animationsEnabled) return;
         let colorIndex = 0;
         const colorInterval = setInterval(() => {
             colorIndex = (colorIndex + 1) % HEART_COLORS.length;
             setHeartColor(HEART_COLORS[colorIndex]);
         }, 1500);
         return () => clearInterval(colorInterval);
-    }, []);
+    }, [animationsEnabled]);
 
     // Name effect rotation — flash for 1.5s every 6.5s
     useEffect(() => {
+        if (!animationsEnabled) return;
         let timeoutId: ReturnType<typeof setTimeout>;
 
         function triggerEffect() {
@@ -353,15 +379,16 @@ export const CreditLine = () => {
             clearInterval(intervalId);
             clearTimeout(timeoutId);
         };
-    }, []);
+    }, [animationsEnabled]);
 
     // Walking heart — every WALK_INTERVAL
     useEffect(() => {
+        if (!animationsEnabled) return;
         const walkInterval = setInterval(() => {
             setHeartState('walking');
         }, WALK_INTERVAL);
         return () => clearInterval(walkInterval);
-    }, []);
+    }, [animationsEnabled]);
 
     // Split display text into before/heart/after/name for rendering
     const heartIndex = displayText.indexOf('❤');

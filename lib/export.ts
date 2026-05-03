@@ -1,11 +1,11 @@
-import * as XLSX from 'xlsx'
 import type { ExpenseWithRelations, Reimbursement, CampBudgetSummary } from './types'
 import { getStatusLabel, getPaymentMethodLabel } from './utils'
 
-export function exportExpensesToExcel(
+export async function exportExpensesToExcel(
   expenses: ExpenseWithRelations[],
   filename: string = 'expenses'
 ) {
+  const XLSX = await import('xlsx')
   const data = expenses.map((e) => ({
     'קמפ': e.camp?.name ?? '',
     'תיאור': e.description,
@@ -23,12 +23,13 @@ export function exportExpensesToExcel(
   XLSX.writeFile(wb, `${filename}.xlsx`)
 }
 
-export function exportFullReport(
+export async function exportFullReport(
   summaries: CampBudgetSummary[],
   expenses: ExpenseWithRelations[],
   reimbursements: Reimbursement[],
   filename: string = 'full-report'
 ) {
+  const XLSX = await import('xlsx')
   const wb = XLSX.utils.book_new()
 
   // Sheet 1: Summary
