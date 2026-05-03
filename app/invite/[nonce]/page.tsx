@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { CreditLine } from '@/components/CreditLine'
+import { CreditLine } from '@/components/CreditLineLazy'
 
 const FLOATING_EMOJIS = ['🔥', '⭐', '🎪', '✨', '🌈', '🎵', '💫', '🦋', '🌸', '🎨', '🪩', '🎭']
 

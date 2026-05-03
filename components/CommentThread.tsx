@@ -22,11 +22,15 @@ interface Comment {
 interface CommentThreadProps {
   expenseId: string
   comments: Comment[]
+  total?: number
+  onLoadMore?: () => void | Promise<void>
 }
 
-export function CommentThread({ expenseId, comments }: CommentThreadProps) {
+export function CommentThread({ expenseId, comments, total, onLoadMore }: CommentThreadProps) {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const totalCount = total ?? comments.length
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -46,10 +50,26 @@ export function CommentThread({ expenseId, comments }: CommentThreadProps) {
 
   return (
     <div className="space-y-4">
-      <h4 className="font-medium text-sm">תגובות ({comments.length})</h4>
+      <h4 className="font-medium text-sm">תגובות ({totalCount})</h4>
 
       {comments.length > 0 && (
         <div className="space-y-3 max-h-64 overflow-y-auto">
+          {onLoadMore && comments.length < totalCount && (
+            <div className="text-center">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={loadingMore}
+                onClick={async () => {
+                  setLoadingMore(true)
+                  try { await onLoadMore() } finally { setLoadingMore(false) }
+                }}
+              >
+                {loadingMore ? 'טוען...' : `טען תגובות קודמות (${totalCount - comments.length})`}
+              </Button>
+            </div>
+          )}
           {comments.map((comment) => (
             <div key={comment.id} className="bg-muted/50 rounded-lg p-3 space-y-1">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">

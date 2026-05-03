@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -47,7 +48,7 @@ export function MobileNav({ items, eventName, userName, seasonStatus, signOutAct
         <SheetHeader className="border-b pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <img src="/unicamp-logo.jpeg" alt="UniCamp" className="w-8 h-8 rounded-lg object-cover" />
+              <Image src="/unicamp-logo.jpeg" alt="UniCamp" width={32} height={32} className="w-8 h-8 rounded-lg object-cover" />
               <SheetTitle>{eventName}</SheetTitle>
             </div>
             {seasonStatus && (

@@ -39,7 +39,6 @@ import {
 } from '@/lib/actions/expenses'
 import { useRealtimeExpenses } from '@/lib/hooks/useRealtimeExpenses'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { exportExpensesToExcel } from '@/lib/export'
 import { toast } from 'sonner'
 import type { Camp, ExpenseCategory, ExpenseWithRelations, ExpenseFilters, ExpenseStatus } from '@/lib/types'
 
@@ -47,23 +46,41 @@ interface Props {
   camps: Camp[]
   categories: ExpenseCategory[]
   users: { id: string; full_name: string | null; email: string | null }[]
+  initialExpenses: ExpenseWithRelations[]
+  initialTotal: number
+  initialFilters: {
+    search?: string
+    status?: ExpenseStatus | 'all'
+    page?: number
+    perPage?: number
+  }
 }
 
-export function AdminExpensesClient({ camps, categories, users }: Props) {
+export function AdminExpensesClient({
+  camps,
+  categories,
+  users,
+  initialExpenses,
+  initialTotal,
+  initialFilters,
+}: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
 
-  // Filter state from URL
-  const [search, setSearch] = useState(searchParams.get('search') ?? '')
-  const [status, setStatus] = useState<ExpenseStatus | 'all'>((searchParams.get('status') as ExpenseStatus) ?? 'all')
-  const [page, setPage] = useState(Number(searchParams.get('page') ?? '1'))
-  const [perPage, setPerPage] = useState(Number(searchParams.get('perPage') ?? '25'))
+  // Filter state from URL (fall back to server-rendered initial filters)
+  const [search, setSearch] = useState(searchParams.get('search') ?? initialFilters.search ?? '')
+  const [status, setStatus] = useState<ExpenseStatus | 'all'>(
+    (searchParams.get('status') as ExpenseStatus) ?? initialFilters.status ?? 'all'
+  )
+  const [page, setPage] = useState(Number(searchParams.get('page') ?? initialFilters.page ?? '1'))
+  const [perPage, setPerPage] = useState(Number(searchParams.get('perPage') ?? initialFilters.perPage ?? '25'))
 
-  // Data
-  const [expenses, setExpenses] = useState<ExpenseWithRelations[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(true)
+  // Data — seeded with server-rendered results so first paint shows real data, not a skeleton
+  const [expenses, setExpenses] = useState<ExpenseWithRelations[]>(initialExpenses)
+  const [total, setTotal] = useState(initialTotal)
+  const [loading, setLoading] = useState(false)
+  const [hasFetched, setHasFetched] = useState(false)
 
   // Selection
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -99,9 +116,14 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
   useRealtimeExpenses(fetchExpenses)
 
   useEffect(() => {
+    // Skip on first mount — server already provided initialExpenses for these filters
+    if (!hasFetched) {
+      setHasFetched(true)
+      return
+    }
     const timeout = setTimeout(fetchExpenses, search ? 300 : 0)
     return () => clearTimeout(timeout)
-  }, [fetchExpenses])
+  }, [fetchExpenses, hasFetched])
 
   // Update URL
   useEffect(() => {
@@ -163,8 +185,9 @@ export function AdminExpensesClient({ camps, categories, users }: Props) {
     }
   }
 
-  function handleExportExcel() {
-    exportExpensesToExcel(expenses, `expenses-${new Date().toISOString().split('T')[0]}`)
+  async function handleExportExcel() {
+    const { exportExpensesToExcel } = await import('@/lib/export')
+    await exportExpensesToExcel(expenses, `expenses-${new Date().toISOString().split('T')[0]}`)
     toast.success('הקובץ הורד')
   }
 

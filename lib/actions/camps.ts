@@ -35,16 +35,28 @@ export async function getCampsWithUsers(type: CampType = 'camp') {
   const { data: camps } = await supabase.from('camps').select('*').eq('type', type).order('name')
   if (!camps) return []
 
+  const campIds = camps.map((c) => c.id)
   const { data: members } = await supabase
     .from('camp_members')
     .select('camp_id, user:profiles(email, full_name)')
+    .in('camp_id', campIds)
+
+  const memberByCamp = new Map<string, { email: string | null; full_name: string | null }>()
+  for (const m of members ?? []) {
+    if (memberByCamp.has(m.camp_id)) continue
+    const user = m.user as unknown as Record<string, unknown> | null
+    memberByCamp.set(m.camp_id, {
+      email: (user?.email as string | null) ?? null,
+      full_name: (user?.full_name as string | null) ?? null,
+    })
+  }
 
   return camps.map((camp) => {
-    const member = members?.find((m) => m.camp_id === camp.id)
+    const member = memberByCamp.get(camp.id)
     return {
       ...camp,
-      user_email: (member?.user as unknown as Record<string, unknown>)?.email as string | null ?? null,
-      user_name: (member?.user as unknown as Record<string, unknown>)?.full_name as string | null ?? null,
+      user_email: member?.email ?? null,
+      user_name: member?.full_name ?? null,
     }
   })
 }

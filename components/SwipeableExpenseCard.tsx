@@ -99,13 +99,17 @@ export function SwipeableExpenseCard({
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={selected}
-                onChange={onToggleSelect}
+              <label
                 onClick={(e) => e.stopPropagation()}
-                className="rounded"
-              />
+                className="inline-flex items-center justify-center w-11 h-11 -m-2.5 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  onChange={onToggleSelect}
+                  className="rounded w-5 h-5"
+                />
+              </label>
               <Badge variant="outline" className="text-xs">
                 {expense.camp?.name ?? '—'}
               </Badge>

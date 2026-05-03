@@ -1,12 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { MobileNav } from '@/components/MobileNav'
 import { CampBottomNav } from '@/components/BottomNav'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { signOut } from '@/lib/actions/users'
-import { CreditLine } from '@/components/CreditLine'
+import { CreditLine } from '@/components/CreditLineLazy'
 
 export default async function CampLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -32,7 +33,7 @@ export default async function CampLayout({ children }: { children: React.ReactNo
           <div className="h-14 sm:h-16 flex items-center justify-between">
             <div className="flex items-center gap-4 sm:gap-8">
               <div className="flex items-center gap-2.5">
-                <img src="/unicamp-logo.jpeg" alt="UniCamp" className="w-8 h-8 rounded-lg object-cover shadow-sm animate-magnetic-drift" />
+                <Image src="/unicamp-logo.jpeg" alt="UniCamp" width={32} height={32} priority className="w-8 h-8 rounded-lg object-cover shadow-sm animate-magnetic-drift" />
                 <span className="font-bold text-lg hidden sm:inline">{settings?.event_name ?? 'UniCamp 2026'}</span>
               </div>
               <nav className="hidden md:flex items-center gap-1">

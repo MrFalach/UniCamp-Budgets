@@ -40,13 +40,30 @@ export function ExpenseDetailDialog({
     created_at: string
     author?: { id: string; full_name: string | null; role?: string } | null
   }>>([])
+  const [totalComments, setTotalComments] = useState(0)
+  const [commentLimit, setCommentLimit] = useState(20)
 
   useEffect(() => {
     if (expense && open) {
       setAdminNote(expense.admin_note ?? '')
-      getExpenseComments(expense.id).then(setComments).catch(() => {})
+      setCommentLimit(20)
+      getExpenseComments(expense.id, 20)
+        .then(({ comments, total }) => {
+          setComments(comments)
+          setTotalComments(total)
+        })
+        .catch(() => {})
     }
   }, [expense, open])
+
+  async function loadMoreComments() {
+    if (!expense) return
+    const next = commentLimit + 20
+    const { comments: more, total } = await getExpenseComments(expense.id, next)
+    setComments(more)
+    setTotalComments(total)
+    setCommentLimit(next)
+  }
 
   if (!expense) return null
 
@@ -211,7 +228,12 @@ export function ExpenseDetailDialog({
             <Separator />
 
             {/* Comments */}
-            <CommentThread expenseId={expense.id} comments={comments} />
+            <CommentThread
+              expenseId={expense.id}
+              comments={comments}
+              total={totalComments}
+              onLoadMore={comments.length < totalComments ? loadMoreComments : undefined}
+            />
           </div>
         </DialogContent>
       </Dialog>

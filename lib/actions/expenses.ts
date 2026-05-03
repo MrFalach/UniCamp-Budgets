@@ -118,9 +118,9 @@ export async function updateExpenseStatus(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
-  const { data: oldExpense } = await supabase.from('expenses').select('*').eq('id', expenseId).single()
+  const { data: oldExpense } = await supabase.from('expenses').select('status').eq('id', expenseId).single()
 
-  const { error } = await supabase
+  const { data: expense, error } = await supabase
     .from('expenses')
     .update({
       status,
@@ -129,6 +129,8 @@ export async function updateExpenseStatus(
       reviewed_by: user.id,
     })
     .eq('id', expenseId)
+    .select('*, camp:camps(name), submitter:profiles!expenses_submitted_by_fkey(email, full_name)')
+    .single()
 
   if (error) throw new Error(error.message)
 
@@ -140,13 +142,6 @@ export async function updateExpenseStatus(
     { status: oldExpense?.status },
     { status, admin_note: adminNote }
   )
-
-  // Get expense details for notification
-  const { data: expense } = await supabase
-    .from('expenses')
-    .select('*, camp:camps(name), submitter:profiles!expenses_submitted_by_fkey(email, full_name)')
-    .eq('id', expenseId)
-    .single()
 
   if (expense) {
     await sendNotification({
@@ -326,14 +321,22 @@ export async function getExpenseById(id: string) {
   return data as unknown as ExpenseWithRelations
 }
 
-export async function getExpenseComments(expenseId: string) {
+export async function getExpenseComments(expenseId: string, limit = 20) {
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('expense_comments')
-    .select('*, author:profiles(id, full_name, role)')
-    .eq('expense_id', expenseId)
-    .order('created_at', { ascending: true })
+  const [countResult, dataResult] = await Promise.all([
+    supabase
+      .from('expense_comments')
+      .select('id', { count: 'exact', head: true })
+      .eq('expense_id', expenseId),
+    supabase
+      .from('expense_comments')
+      .select('*, author:profiles(id, full_name, role)')
+      .eq('expense_id', expenseId)
+      .order('created_at', { ascending: false })
+      .limit(limit),
+  ])
 
-  if (error) throw new Error(error.message)
-  return data
+  if (dataResult.error) throw new Error(dataResult.error.message)
+  const comments = (dataResult.data ?? []).slice().reverse()
+  return { comments, total: countResult.count ?? 0 }
 }

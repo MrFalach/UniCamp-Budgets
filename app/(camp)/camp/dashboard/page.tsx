@@ -16,8 +16,11 @@ export default async function CampDashboard() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const settings = await getAppSettings()
-  const camp = await getUserCamp(user.id)
+  const [settings, camp, profileResult] = await Promise.all([
+    getAppSettings(),
+    getUserCamp(user.id),
+    supabase.from('profiles').select('has_seen_welcome').eq('id', user.id).single(),
+  ])
 
   if (!camp) {
     return (
@@ -29,21 +32,34 @@ export default async function CampDashboard() {
     )
   }
 
-  const { data: profile } = await supabase.from('profiles').select('has_seen_welcome').eq('id', user.id).single()
-  const showWelcome = !profile?.has_seen_welcome
+  const showWelcome = !profileResult.data?.has_seen_welcome
 
-  const budget = await getCampWithBudget(camp.id)
+  const isProduction = camp.type === 'production'
+  const [budget, productionData, recentExpensesResult] = await Promise.all([
+    getCampWithBudget(camp.id),
+    isProduction
+      ? Promise.all([
+          getCampCategories(camp.id),
+          supabase
+            .from('expenses')
+            .select('category_id, amount, status')
+            .eq('camp_id', camp.id),
+        ])
+      : Promise.resolve(null),
+    supabase
+      .from('expenses')
+      .select('id, amount, description, status, submitted_at')
+      .eq('camp_id', camp.id)
+      .order('submitted_at', { ascending: false })
+      .limit(5),
+  ])
+  const { data: recentExpenses } = recentExpensesResult
   const seasonClosed = settings.season_status === 'closed'
 
   // Per-category breakdown for productions
   let categoryBreakdown: { id: string; name: string; color: string | null; budget_cap: number; approved: number; pending: number }[] = []
-  if (camp.type === 'production') {
-    const campCategories = await getCampCategories(camp.id)
-    const { data: catExpenses } = await supabase
-      .from('expenses')
-      .select('category_id, amount, status')
-      .eq('camp_id', camp.id)
-
+  if (productionData) {
+    const [campCategories, { data: catExpenses }] = productionData
     categoryBreakdown = campCategories.map((cat) => {
       const catExp = catExpenses?.filter((e) => e.category_id === cat.id) ?? []
       return {
@@ -56,13 +72,6 @@ export default async function CampDashboard() {
       }
     })
   }
-
-  const { data: recentExpenses } = await supabase
-    .from('expenses')
-    .select('id, amount, description, status, submitted_at')
-    .eq('camp_id', camp.id)
-    .order('submitted_at', { ascending: false })
-    .limit(5)
 
   // Shitim advance is an out-of-pocket payment by the camp that will be reimbursed —
   // it does not reduce the gifting budget and is shown separately below.
