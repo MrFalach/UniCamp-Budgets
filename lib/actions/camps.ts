@@ -38,14 +38,15 @@ export async function getCampsWithUsers(type: CampType = 'camp') {
   const campIds = camps.map((c) => c.id)
   const { data: members } = await supabase
     .from('camp_members')
-    .select('camp_id, user:profiles(email, full_name)')
+    .select('camp_id, user:profiles(id, email, full_name)')
     .in('camp_id', campIds)
 
-  const memberByCamp = new Map<string, { email: string | null; full_name: string | null }>()
+  const memberByCamp = new Map<string, { id: string | null; email: string | null; full_name: string | null }>()
   for (const m of members ?? []) {
     if (memberByCamp.has(m.camp_id)) continue
     const user = m.user as unknown as Record<string, unknown> | null
     memberByCamp.set(m.camp_id, {
+      id: (user?.id as string | null) ?? null,
       email: (user?.email as string | null) ?? null,
       full_name: (user?.full_name as string | null) ?? null,
     })
@@ -55,6 +56,7 @@ export async function getCampsWithUsers(type: CampType = 'camp') {
     const member = memberByCamp.get(camp.id)
     return {
       ...camp,
+      user_id: member?.id ?? null,
       user_email: member?.email ?? null,
       user_name: member?.full_name ?? null,
     }
@@ -284,6 +286,108 @@ export async function updateCamp(campId: string, formData: FormData) {
   await logAction(user.id, 'camp_updated', 'camp', campId, old as Record<string, unknown>, { name, total_budget: totalBudget, shitim_advance: updates.shitim_advance })
 
   revalidatePath('/admin')
+}
+
+/**
+ * Set or change the email of the camp/production/supplier manager.
+ *
+ * - If the camp already has a linked member, updates that user's auth+profile email.
+ * - If no member is linked yet, finds-or-invites a user for the email and links them.
+ *
+ * Returns the invite URL when a brand-new user was provisioned (so the caller can
+ * surface it the same way camp creation does), otherwise `null`.
+ */
+export async function setCampManager(campId: string, newEmail: string): Promise<{ inviteUrl: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data: caller } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (caller?.role !== 'admin') throw new Error('Forbidden')
+
+  const email = newEmail.trim().toLowerCase()
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error('כתובת אימייל לא תקינה')
+  }
+
+  const { data: camp } = await supabase.from('camps').select('id, type').eq('id', campId).single()
+  if (!camp) throw new Error('הקמפ לא נמצא')
+
+  const { data: existingMember } = await supabase
+    .from('camp_members')
+    .select('user_id, user:profiles(id, email)')
+    .eq('camp_id', campId)
+    .limit(1)
+    .maybeSingle()
+
+  const adminClient = createAdminClient()
+
+  // Case 1: a manager is already linked — update their email.
+  if (existingMember?.user_id) {
+    const linkedUser = existingMember.user as unknown as { id: string; email: string | null } | null
+    if ((linkedUser?.email ?? '').toLowerCase() === email) {
+      return { inviteUrl: null }
+    }
+
+    const { error: authError } = await adminClient.auth.admin.updateUserById(existingMember.user_id, {
+      email,
+      email_confirm: true,
+    })
+    if (authError) throw new Error(authError.message)
+
+    const { error: profileError } = await adminClient
+      .from('profiles')
+      .update({ email })
+      .eq('id', existingMember.user_id)
+    if (profileError) throw new Error(profileError.message)
+
+    await logAction(user.id, 'user_email_changed', 'profile', existingMember.user_id, { email: linkedUser?.email }, { email })
+    revalidatePath('/admin/camps')
+    revalidatePath('/admin/users')
+    return { inviteUrl: null }
+  }
+
+  // Case 2: no linked manager yet — find or invite a user, then link them.
+  const { data: existingProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('email', email)
+    .maybeSingle()
+
+  let userId: string
+  let inviteUrl: string | null = null
+
+  if (existingProfile) {
+    userId = existingProfile.id
+    await supabase.from('profiles').update({ role: 'camp' }).eq('id', userId)
+  } else {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+    const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
+      type: 'invite',
+      email,
+      options: { redirectTo: `${siteUrl}/auth/callback?next=/set-password` },
+    })
+    if (linkError) throw new Error(`שגיאה ביצירת המשתמש: ${linkError.message}`)
+    userId = linkData.user.id
+
+    await new Promise((r) => setTimeout(r, 500))
+    await adminClient.from('profiles').update({ role: 'camp' }).eq('id', userId)
+
+    const { createInvite } = await import('@/lib/actions/invites')
+    inviteUrl = await createInvite(email, campId)
+  }
+
+  const { error: memberError } = await supabase
+    .from('camp_members')
+    .insert({ camp_id: campId, user_id: userId })
+  if (memberError && memberError.code !== '23505') {
+    throw new Error(memberError.message)
+  }
+
+  await logAction(user.id, 'camp_manager_assigned', 'camp', campId, undefined, { email })
+  revalidatePath('/admin/camps')
+  revalidatePath('/admin/users')
+  return { inviteUrl }
 }
 
 export async function deleteCamp(campId: string) {
