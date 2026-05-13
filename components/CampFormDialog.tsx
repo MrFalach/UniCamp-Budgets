@@ -12,13 +12,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { createCamp, updateCamp, updateCampCategories } from '@/lib/actions/camps'
+import { createCamp, updateCamp, updateCampCategories, setCampManager } from '@/lib/actions/camps'
 import { toast } from 'sonner'
 import type { Camp, ExpenseCategory } from '@/lib/types'
 
 interface CampFormDialogProps {
   camp?: Camp | null
   campEmail?: string | null
+  campUserId?: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
   /** All expense categories (needed for production type) */
@@ -32,6 +33,7 @@ interface CampFormDialogProps {
 export function CampFormDialog({
   camp,
   campEmail,
+  campUserId,
   open,
   onOpenChange,
   allCategories = [],
@@ -97,8 +99,19 @@ export function CampFormDialog({
         if (entityType === 'production') {
           await updateCampCategories(camp!.id, selectedCategories)
         }
+        const newEmail = (formData.get('email') as string | null)?.trim().toLowerCase() ?? ''
+        const oldEmail = (campEmail ?? '').trim().toLowerCase()
+        let invitedUrl: string | null = null
+        if (newEmail && newEmail !== oldEmail) {
+          const result = await setCampManager(camp!.id, newEmail)
+          invitedUrl = result.inviteUrl
+        }
         toast.success(entityType === 'production' ? 'ההפקה עודכנה בהצלחה' : 'הקמפ עודכן בהצלחה')
-        onOpenChange(false)
+        if (invitedUrl) {
+          setInviteUrl(invitedUrl)
+        } else {
+          onOpenChange(false)
+        }
       } else {
         const result = await createCamp(formData)
         if (result?.inviteUrl) {
@@ -262,11 +275,18 @@ export function CampFormDialog({
               defaultValue={campEmail ?? ''}
               dir="ltr"
               placeholder="manager@example.com"
-              disabled={isEdit}
             />
-            {!isEdit && (
+            {!isEdit ? (
               <p className="text-xs text-muted-foreground">
                 לאחר היצירה תקבל לינק הזמנה לשלוח למשתמש
+              </p>
+            ) : campUserId ? (
+              <p className="text-xs text-muted-foreground">
+                שינוי האימייל יעדכן גם את כתובת ההתחברות של המשתמש
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                הזן אימייל כדי לשייך מנהל ל{entityLabel} — אם זה משתמש חדש, יווצר לינק הזמנה
               </p>
             )}
           </div>

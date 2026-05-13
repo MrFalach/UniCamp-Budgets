@@ -13,10 +13,12 @@ export default async function AdminCampsPage() {
     getTakenProductionCategoryIds(),
   ])
 
-  // Build email lookup for both camps and productions
+  // Build email + user-id lookup for both camps and productions
   const campEmails: Record<string, string | null> = {}
+  const campUserIds: Record<string, string | null> = {}
   for (const c of [...campsWithUsers, ...productionsWithUsers]) {
     campEmails[c.id] = c.user_email
+    campUserIds[c.id] = c.user_id
   }
 
   // Build category assignments per production (for display + editing)
@@ -43,6 +45,7 @@ export default async function AdminCampsPage() {
       campBudgets={campBudgets}
       productionBudgets={productionBudgets}
       campEmails={campEmails}
+      campUserIds={campUserIds}
       threshold={settings.budget_warning_threshold}
       allCategories={allCategories}
       takenProductionCategoryIds={takenProductionCategoryIds}

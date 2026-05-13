@@ -26,6 +26,7 @@ interface Props {
   campBudgets: CampBudgetSummary[]
   productionBudgets: CampBudgetSummary[]
   campEmails: Record<string, string | null>
+  campUserIds: Record<string, string | null>
   threshold: number
   allCategories: ExpenseCategory[]
   takenProductionCategoryIds: string[]
@@ -40,6 +41,7 @@ export function AdminCampsClient({
   campBudgets,
   productionBudgets,
   campEmails,
+  campUserIds,
   threshold,
   allCategories,
   takenProductionCategoryIds,
@@ -345,6 +347,7 @@ export function AdminCampsClient({
         key={editCamp?.id ?? 'new'}
         camp={editCamp}
         campEmail={editCamp ? campEmails[editCamp.id] : null}
+        campUserId={editCamp ? campUserIds[editCamp.id] : null}
         open={formOpen}
         onOpenChange={setFormOpen}
         allCategories={allCategories}
