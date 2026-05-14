@@ -60,19 +60,22 @@ export function ExpenseDetailDialog({
     }
   }, [expense, open])
 
+  const expenseId = expense?.id
+  const expenseReceiptPath = expense?.receipt_path
+  const expenseReceiptUrl = expense?.receipt_url
   useEffect(() => {
-    if (!expense || !open) {
+    if (!expenseId || !open) {
       setReceiptUrl(null)
       return
     }
-    if (!expense.receipt_path && !expense.receipt_url) {
+    if (!expenseReceiptPath && !expenseReceiptUrl) {
       setReceiptUrl(null)
       return
     }
     let cancelled = false
     setReceiptLoading(true)
     setReceiptUrl(null)
-    getReceiptSignedUrl(expense.id)
+    getReceiptSignedUrl(expenseId)
       .then((url) => {
         if (!cancelled) setReceiptUrl(url)
       })
@@ -85,7 +88,7 @@ export function ExpenseDetailDialog({
     return () => {
       cancelled = true
     }
-  }, [expense, open])
+  }, [expenseId, expenseReceiptPath, expenseReceiptUrl, open])
 
   async function loadMoreComments() {
     if (!expense) return

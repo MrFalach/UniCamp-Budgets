@@ -19,7 +19,11 @@ export async function submitExpense(formData: FormData) {
   const amount = Number(formData.get('amount'))
   const description = formData.get('description') as string
   let categoryId = formData.get('category_id') as string | null
-  const receiptPath = formData.get('receipt_path') as string | null
+  const rawReceiptPath = formData.get('receipt_path') as string | null
+  // Validate at the write boundary too — the read-side check already rejects
+  // poisoned paths, but storing one would corrupt the row and silently disable
+  // the receipt indicator for that expense.
+  const receiptPath = rawReceiptPath && isSafeStoragePath(rawReceiptPath) ? rawReceiptPath : null
   const receiptType = formData.get('receipt_type') as string | null
 
   // Auto-assign category based on type:
