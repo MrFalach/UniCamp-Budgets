@@ -68,6 +68,7 @@ export interface Expense {
   amount: number
   description: string
   category_id: string | null
+  receipt_path: string | null
   receipt_url: string | null
   receipt_type: ReceiptType | null
   status: ExpenseStatus

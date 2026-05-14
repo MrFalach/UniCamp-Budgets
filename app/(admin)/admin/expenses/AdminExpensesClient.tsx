@@ -426,7 +426,7 @@ export function AdminExpensesClient({
                       <StatusBadge status={expense.status} />
                     </TableCell>
                     <TableCell>
-                      {expense.receipt_url ? (
+                      {expense.receipt_path || expense.receipt_url ? (
                         <span className="text-emerald-600">✓</span>
                       ) : (
                         <span className="text-muted-foreground">—</span>

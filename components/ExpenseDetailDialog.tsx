@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator'
 import { StatusBadge } from './StatusBadge'
 import { CommentThread } from './CommentThread'
 import { ConfirmDialog } from './ConfirmDialog'
-import { updateExpenseStatus, deleteExpense, getExpenseComments } from '@/lib/actions/expenses'
+import { updateExpenseStatus, deleteExpense, getExpenseComments, getReceiptSignedUrl } from '@/lib/actions/expenses'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { ExpenseWithRelations } from '@/lib/types'
@@ -42,6 +42,10 @@ export function ExpenseDetailDialog({
   }>>([])
   const [totalComments, setTotalComments] = useState(0)
   const [commentLimit, setCommentLimit] = useState(20)
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+  const [receiptLoading, setReceiptLoading] = useState(false)
+
+  const hasReceipt = Boolean(expense?.receipt_path || expense?.receipt_url)
 
   useEffect(() => {
     if (expense && open) {
@@ -53,6 +57,33 @@ export function ExpenseDetailDialog({
           setTotalComments(total)
         })
         .catch(() => {})
+    }
+  }, [expense, open])
+
+  useEffect(() => {
+    if (!expense || !open) {
+      setReceiptUrl(null)
+      return
+    }
+    if (!expense.receipt_path && !expense.receipt_url) {
+      setReceiptUrl(null)
+      return
+    }
+    let cancelled = false
+    setReceiptLoading(true)
+    setReceiptUrl(null)
+    getReceiptSignedUrl(expense.id)
+      .then((url) => {
+        if (!cancelled) setReceiptUrl(url)
+      })
+      .catch(() => {
+        if (!cancelled) setReceiptUrl(null)
+      })
+      .finally(() => {
+        if (!cancelled) setReceiptLoading(false)
+      })
+    return () => {
+      cancelled = true
     }
   }, [expense, open])
 
@@ -103,29 +134,35 @@ export function ExpenseDetailDialog({
 
           <div className="space-y-4">
             {/* Receipt */}
-            {expense.receipt_url && (
+            {hasReceipt && (
               <div className="border rounded-lg p-3">
-                {expense.receipt_type === 'image' ? (
+                {receiptLoading || !receiptUrl ? (
+                  <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
+                    {receiptLoading ? 'טוען קבלה…' : 'הקבלה אינה זמינה'}
+                  </div>
+                ) : expense.receipt_type === 'image' ? (
                   <img
-                    src={expense.receipt_url}
+                    src={receiptUrl}
                     alt="Receipt"
                     className="max-h-64 rounded object-contain mx-auto"
                   />
                 ) : (
                   <iframe
-                    src={expense.receipt_url}
+                    src={receiptUrl}
                     className="w-full h-64 rounded"
                     title="Receipt PDF"
                   />
                 )}
-                <a
-                  href={expense.receipt_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary underline mt-2 inline-block"
-                >
-                  הורד קבלה
-                </a>
+                {receiptUrl && (
+                  <a
+                    href={receiptUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary underline mt-2 inline-block"
+                  >
+                    הורד קבלה
+                  </a>
+                )}
               </div>
             )}
 

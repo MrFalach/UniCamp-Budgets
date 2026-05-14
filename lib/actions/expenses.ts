@@ -19,7 +19,7 @@ export async function submitExpense(formData: FormData) {
   const amount = Number(formData.get('amount'))
   const description = formData.get('description') as string
   let categoryId = formData.get('category_id') as string | null
-  const receiptUrl = formData.get('receipt_url') as string | null
+  const receiptPath = formData.get('receipt_path') as string | null
   const receiptType = formData.get('receipt_type') as string | null
 
   // Auto-assign category based on type:
@@ -53,7 +53,7 @@ export async function submitExpense(formData: FormData) {
       amount,
       description,
       category_id: categoryId || null,
-      receipt_url: receiptUrl || null,
+      receipt_path: receiptPath || null,
       receipt_type: receiptType || null,
     })
     .select()
@@ -284,7 +284,7 @@ export async function getFilteredExpenses(filters: ExpenseFilters): Promise<{
   }
 
   if (filters.hasReceipt) {
-    query = query.not('receipt_url', 'is', null)
+    query = query.or('receipt_path.not.is.null,receipt_url.not.is.null')
   }
 
   if (filters.submittedBy) {
@@ -319,6 +319,59 @@ export async function getExpenseById(id: string) {
 
   if (error) throw new Error(error.message)
   return data as unknown as ExpenseWithRelations
+}
+
+// Path of receipt files we accept: anything under the `receipts` bucket.
+// Reject absolute URLs and traversal so callers cannot trick the server into
+// signing arbitrary buckets/objects.
+function isSafeStoragePath(path: string): boolean {
+  if (!path) return false
+  if (path.includes('..')) return false
+  if (path.startsWith('/')) return false
+  if (/^https?:\/\//i.test(path)) return false
+  return true
+}
+
+// Best-effort extraction of the storage path from a legacy signed/public URL.
+// Used as a fallback for expenses created before we started persisting
+// `receipt_path` (any rows the migration backfill missed).
+function pathFromLegacyReceiptUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  const signed = url.match(/\/storage\/v1\/object\/sign\/receipts\/([^?]+)/)
+  if (signed?.[1]) return decodeURIComponent(signed[1])
+  const pub = url.match(/\/storage\/v1\/object\/public\/receipts\/(.+)$/)
+  if (pub?.[1]) return decodeURIComponent(pub[1].split('?')[0])
+  return null
+}
+
+// Returns a freshly signed URL for the given expense's receipt. The caller is
+// authenticated via Supabase RLS — `getExpenseById` will only succeed if the
+// user is allowed to see the expense.
+export async function getReceiptSignedUrl(expenseId: string): Promise<string | null> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data: expense, error } = await supabase
+    .from('expenses')
+    .select('receipt_path, receipt_url')
+    .eq('id', expenseId)
+    .single()
+
+  if (error || !expense) return null
+
+  let path = expense.receipt_path as string | null
+  if (!path) path = pathFromLegacyReceiptUrl(expense.receipt_url as string | null)
+  if (!path || !isSafeStoragePath(path)) return null
+
+  // 1 hour is fine — the URL is minted on every view, so this is just the
+  // window during which a copy-pasted link keeps working.
+  const { data, error: signErr } = await supabase.storage
+    .from('receipts')
+    .createSignedUrl(path, 3600)
+
+  if (signErr) return null
+  return data?.signedUrl ?? null
 }
 
 export async function getExpenseComments(expenseId: string, limit = 20) {
