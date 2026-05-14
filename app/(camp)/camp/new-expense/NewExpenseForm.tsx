@@ -34,7 +34,7 @@ export function NewExpenseForm({ categories, campType, campId }: Props) {
     setLoading(true)
     try {
       const formData = new FormData(e.currentTarget)
-      let receiptUrl: string | null = null
+      let receiptPath: string | null = null
       let receiptType: string | null = null
 
       if (file) {
@@ -48,15 +48,13 @@ export function NewExpenseForm({ categories, campType, campId }: Props) {
 
         if (uploadError) throw uploadError
 
-        const { data: urlData } = await supabase.storage
-          .from('receipts')
-          .createSignedUrl(path, 3600)
-
-        receiptUrl = urlData?.signedUrl ?? null
+        // Persist the storage path, not a signed URL — signed URLs expire
+        // after an hour. The view side mints a fresh URL on every render.
+        receiptPath = path
         receiptType = file.type.startsWith('image/') ? 'image' : 'pdf'
       }
       formData.set('camp_id', campId)
-      if (receiptUrl) formData.set('receipt_url', receiptUrl)
+      if (receiptPath) formData.set('receipt_path', receiptPath)
       if (receiptType) formData.set('receipt_type', receiptType)
 
       await submitExpense(formData)

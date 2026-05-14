@@ -124,7 +124,7 @@ export function SwipeableExpenseCard({
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span>{expense.submitter?.full_name ?? '—'}</span>
               <span className="font-mono">{formatDate(expense.submitted_at)}</span>
-              {expense.receipt_url && <span className="text-emerald-600">📎</span>}
+              {(expense.receipt_path || expense.receipt_url) && <span className="text-emerald-600">📎</span>}
             </div>
           </div>
           {isPending && (
