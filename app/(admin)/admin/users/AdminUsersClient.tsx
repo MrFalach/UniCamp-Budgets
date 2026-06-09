@@ -16,7 +16,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { UserInviteDialog } from '@/components/UserInviteDialog'
 import { EditEmailDialog } from '@/components/EditEmailDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { updateUser, deleteUser } from '@/lib/actions/users'
+import { updateUser, deleteUser, resendInvite } from '@/lib/actions/users'
 import { toast } from 'sonner'
 
 interface UserWithCamps {
@@ -41,6 +41,27 @@ export function AdminUsersClient({ users }: Props) {
   const [deleteTarget, setDeleteTarget] = useState<UserWithCamps | null>(null)
   const [emailEditTarget, setEmailEditTarget] = useState<UserWithCamps | null>(null)
   const [roleChangeTarget, setRoleChangeTarget] = useState<{ user: UserWithCamps; newRole: string } | null>(null)
+  const [copyingId, setCopyingId] = useState<string | null>(null)
+
+  async function handleCopyResetLink(user: UserWithCamps) {
+    if (!user.email) {
+      toast.error('למשתמש אין כתובת אימייל')
+      return
+    }
+    setCopyingId(user.id)
+    try {
+      const campId = user.camp_members?.[0]?.camp_id
+      const url = await resendInvite(user.email, campId)
+      await navigator.clipboard.writeText(url)
+      toast.success('הלינק הועתק', {
+        description: 'שלח אותו למשתמש (וואטסאפ וכו׳) להגדרת סיסמה — ללא צורך באימייל',
+      })
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'שגיאה ביצירת לינק')
+    } finally {
+      setCopyingId(null)
+    }
+  }
 
   async function handleRoleChange() {
     if (!roleChangeTarget) return
@@ -154,15 +175,26 @@ export function AdminUsersClient({ users }: Props) {
                       ))}
                     </div>
                   </div>
-                  {user.is_active ? (
-                    <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => setDeleteTarget(user)}>
-                      מחק
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-primary text-xs"
+                      disabled={copyingId === user.id}
+                      onClick={() => handleCopyResetLink(user)}
+                    >
+                      {copyingId === user.id ? 'מעתיק...' : 'לינק לאיפוס סיסמה'}
                     </Button>
-                  ) : (
-                    <Button variant="ghost" size="sm" className="text-emerald-600 text-xs" onClick={() => handleActivate(user.id)}>
-                      הפעל
-                    </Button>
-                  )}
+                    {user.is_active ? (
+                      <Button variant="ghost" size="sm" className="text-destructive text-xs" onClick={() => setDeleteTarget(user)}>
+                        מחק
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" className="text-emerald-600 text-xs" onClick={() => handleActivate(user.id)}>
+                        הפעל
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -246,25 +278,36 @@ export function AdminUsersClient({ users }: Props) {
                       )}
                     </TableCell>
                     <TableCell>
-                      {user.is_active ? (
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => setDeleteTarget(user)}
+                          className="text-primary hover:text-primary hover:bg-primary/10"
+                          disabled={copyingId === user.id}
+                          onClick={() => handleCopyResetLink(user)}
                         >
-                          מחק
+                          {copyingId === user.id ? 'מעתיק...' : 'לינק לאיפוס סיסמה'}
                         </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                          onClick={() => handleActivate(user.id)}
-                        >
-                          הפעל
-                        </Button>
-                      )}
+                        {user.is_active ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => setDeleteTarget(user)}
+                          >
+                            מחק
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                            onClick={() => handleActivate(user.id)}
+                          >
+                            הפעל
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
